@@ -21,9 +21,9 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
-EXPOSE 8080
+EXPOSE ${PORT:-6800}
 
-# Use shell to read Railway's PORT env var and pass it as a command-line argument.
-# This is more reliable than YAML placeholder resolution (%7BPORT:6800%7D) because
-# command-line args take the highest precedence in Spring Boot property resolution.
-CMD sh -c "java -jar app.jar --server.port=\${PORT:-6800} --server.address=0.0.0.0"
+# Shell form CMD — Docker wraps with /bin/sh -c and evaluates ${PORT} directly.
+# This reads Railway's PORT env var and passes it as a command-line argument.
+# Command-line args have the highest Spring Boot property precedence.
+CMD java -jar app.jar --server.port=${PORT:-6800} --server.address=0.0.0.0
