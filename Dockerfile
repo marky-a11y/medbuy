@@ -26,4 +26,4 @@ EXPOSE 8080
 # Shell form CMD — Docker wraps with /bin/sh -c and evaluates ${PORT} directly.
 # Railway sets the PORT env var automatically. The --server.port argument overrides
 # any YAML/property-file configuration (highest Spring Boot precedence).
-CMD java -jar app.jar --server.port=${PORT:-6800} --server.address=0.0.0.0
+CMD sh -c 'if [ -n "$PORT" ]; then exec java -jar app.jar --server.port=$PORT --server.address=0.0.0.0; else exec java -jar app.jar --server.address=0.0.0.0; fi'
