@@ -1,0 +1,307 @@
+# =============================================================================
+# kube-prometheus-stack Helm Values
+# Deploys: Prometheus + AlertManager + Grafana + kube-state-metrics + node-exporter
+# Chart: prometheus-community/kube-prometheus-stack v60.x
+# Used in: Week 11 - Observability & Ops Milestone
+# =============================================================================
+
+# ---- Global ----
+global:
+  rbac:
+    create: true
+
+# ---- Prometheus Configuration ----
+prometheus:
+  enabled: true
+  prometheusSpec:
+    replicas: 2
+    retention: 15d
+    retentionSize: 20GB
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    externalLabels:
+      cluster: media-buying
+      environment: dev
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+          storageClassName: gp3
+    # Scrape any ServiceMonitor/PodMonitor regardless of label selector
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorSelector:
+      matchLabels:
+        release: prometheus-stack
+    ruleSelector:
+      matchLabels:
+        release: prometheus-stack
+    additionalScrapeConfigs:
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+            target_label: __address__
+            regex: (.+);(.+)
+            replacement: $1:$2
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name]
+            target_label: instance
+            separator: '/'
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            target_label: app
+      # Fast-scrape job for dashboard pods (matches 5-second app refresh rate)
+      - job_name: 'media-buying-dashboard-fast'
+        scrape_interval: 15s
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace]
+            action: keep
+            regex: media-buying
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            action: keep
+            regex: media-buying-dashboard
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+            target_label: __address__
+            regex: (.+);(.+)
+            replacement: $1:$2
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name]
+            target_label: instance
+            separator: '/'
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            target_label: app
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component]
+            target_label: component
+            regex: (.+)
+    enableFeatures:
+      - exemplar-storage
+    enableAdminAPI: true
+
+# ---- AlertManager Configuration ----
+alertmanager:
+  enabled: true
+  config:
+    global:
+      resolve_timeout: 5m
+      slack_api_url: "REPLACE_WITH_SLACK_WEBHOOK_URL"
+    templates:
+      - '/etc/alertmanager/config/*.tmpl'
+    route:
+      group_by: ['alertname', 'severity']
+      group_wait: 10s
+      group_interval: 30s
+      repeat_interval: 4h
+      receiver: 'default-slack'
+      routes:
+        # CRITICAL alerts → PagerDuty (with Slack fallback via continue)
+        - match:
+            severity: critical
+          receiver: 'pagerduty-critical'
+          continue: true
+        # WARNING + INFO alerts → Slack #alerts-warning
+        - match:
+            severity: warning
+          receiver: 'slack-warning'
+        - match:
+            severity: info
+          receiver: 'slack-warning'
+        # Catch-all for unmatched (INFO, etc.) → same Slack channel
+        - receiver: 'slack-warning'
+    receivers:
+      - name: 'default-slack'
+        slack_configs:
+          - channel: '#alerts-warning'
+            title: 'Media Buying Dashboard - {{ .Status | toUpper }}'
+            text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\n{{ end }}'
+            send_resolved: true
+      - name: 'pagerduty-critical'
+        pagerduty_configs:
+          - routing_key: "REPLACE_WITH_PAGERDUTY_ROUTING_KEY"
+            severity: critical
+            description: '{{ .CommonAnnotations.summary }}'
+            client: 'Prometheus - Media Buying Dashboard'
+            client_url: '{{ .ExternalURL }}'
+        slack_configs:
+          - channel: '#alerts-warning'
+            title: '[CRITICAL] Media Buying Dashboard'
+            text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\nRunbook: {{ .Annotations.runbook_url }}\n{{ end }}'
+            send_resolved: true
+      - name: 'slack-warning'
+        slack_configs:
+          - channel: '#alerts-warning'
+            title: '[{{ .Status | toUpper }}] Media Buying Dashboard'
+            text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\n{{ end }}'
+            send_resolved: true
+    inhibit_rules:
+      # NodeDown → suppress all pod-level alerts on the same node
+      - source_match:
+          severity: critical
+          alertname: 'NodeDown'
+        target_match:
+          severity: '.*'
+        equal: ['node']
+      # Critical alert → suppress warning alerts of same type
+      - source_match:
+          severity: critical
+        target_match:
+          severity: warning
+        equal: ['alertname']
+    alertmanagerSpec:
+      replicas: 2
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+# ---- Grafana Configuration ----
+grafana:
+  enabled: true
+  replicas: 1
+  adminPassword: "CHANGE_ME_IN_PRODUCTION"
+  defaultDashboardsEnabled: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+  dashboardsConfigMaps:
+    default: "grafana-dashboards-media-buying"
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+      folder: Media Buying Dashboard
+      provider:
+        foldersFromFilesStructure: true
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      labelValue: "1"
+      searchNamespace: ALL
+      defaultDatasourceEnabled: true
+  additionalDataSources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-operated:9090
+      access: proxy
+      isDefault: true
+      editable: false
+      jsonData:
+        timeInterval: 30s
+        exemplarTraceIdDestinations:
+          - name: trace_id
+            datasourceUid: tempo
+  grafana.ini:
+    server:
+      domain: grafana.media-buying.autoresolve.com
+      root_url: https://grafana.media-buying.autoresolve.com
+    auth:
+      disable_login_form: false
+    auth.anonymous:
+      enabled: false
+    security:
+      allow_embedding: true
+      cookie_secure: true
+    users:
+      allow_sign_up: false
+    smtp:
+      enabled: false
+    unified_alerting:
+      enabled: true
+  ingress:
+    enabled: true
+    ingressClassName: alb
+    hosts:
+      - grafana.media-buying.autoresolve.com
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/certificate-arn: "REPLACE_WITH_ACM_CERT_ARN"
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.media-buying.autoresolve.com
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: gp3
+
+# ---- kube-state-metrics ----
+kube-state-metrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# ---- Prometheus Node Exporter ----
+prometheus-node-exporter:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# ---- CRDs ----
+prometheusOperator:
+  enabled: true
+  admissionWebhooks:
+    enabled: true
+  tls:
+    enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi

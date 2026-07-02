@@ -1,0 +1,22 @@
+server:
+  port: 6800
+  address: 0.0.0.0
+
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 40
+      minimum-idle: 10
+
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        jdbc.batch_size: 25
+
+  thymeleaf:
+    cache: true
+
+logging:
+  level:
+    com.autoresolve.mediabuying: INFO

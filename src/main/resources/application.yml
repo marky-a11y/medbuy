@@ -1,0 +1,355 @@
+server:
+  port: 6800
+  address: 0.0.0.0
+
+spring:
+  application:
+    name: media-buying-dashboard
+
+  # PostgreSQL datasource
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/media_buying
+    username: ${DB_USER:mediabuyer}
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+
+  # JPA / Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc.lob.non_contextual_creation: true
+
+  # Spring Events async configuration (replaces Kafka)
+  events:
+    async:
+      pool:
+        core-size: 4
+        max-size: 10
+        queue-capacity: 100
+
+  # Flyway
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: media_buying
+
+  # Thymeleaf
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+
+  # Session (in-memory — no external session store needed)
+  session:
+    store-type: none
+
+  # JSF / PrimeFaces (Joinfaces)
+  joinfaces:
+    primefaces:
+      theme: none
+      font-awesome: true
+    faces:
+      project-stage: Development
+
+# Scoring Weights
+scoring:
+  weights:
+    roas: 0.25
+    cac: 0.20
+    cltv: 0.20
+    conversion-rate: 0.15
+    scalability: 0.10
+    attribution-accuracy: 0.10
+  targets:
+    roas-target: 4.0
+    max-cac: 50.0
+    cltv-target: 500.0
+    max-scalability: 1000000.0
+    conversion-rate-target: 0.05
+
+# Integration API keys & platform-specific config
+integration:
+  # New data sources for Opportunity Metrics
+  pagespeed-insights:
+    api-key: ${PAGESPEED_INSIGHTS_API_KEY:}
+    reference-url: https://developers.google.com/speed/docs/insights/v5/get-started
+  census-api:
+    api-key: ${CENSUS_API_KEY:}
+    reference-url: https://www.census.gov/data/developers.html
+  # =============================================
+  # DSRC-03 — 10 Market Data Source Wrappers
+  # =============================================
+  pytrends:
+    # PyTrends scrapes public Google Trends data — no API key required.
+    reference-url: https://github.com/GeneralMills/pytrends
+  yelp-fusion:
+    api-key: ${YELP_FUSION_API_KEY:}
+    reference-url: https://fusion.yelp.com/
+  foursquare-places:
+    api-key: ${FOURSQUARE_PLACES_API_KEY:}
+    reference-url: https://docs.foursquare.com/developer/reference/places-api
+  skyscanner:
+    api-key: ${SKYSCANNER_API_KEY:}
+    reference-url: https://www.partners.skyscanner.net/
+  bing-webmaster:
+    api-key: ${BING_WEBMASTER_API_KEY:}
+    site-url: ${BING_WEBMASTER_SITE_URL:}
+    reference-url: https://learn.microsoft.com/bingwebmaster/
+  ebay:
+    api-key: ${EBAY_API_KEY:}
+    app-id: ${EBAY_APP_ID:}
+    reference-url: https://developer.ebay.com/Devzone/finding/Concepts/FindingAPIGuide.html
+  reddit:
+    api-key: ${REDDIT_API_KEY:}
+    user-agent: ${REDDIT_USER_AGENT:MediaBuyingDashboard/1.0}
+    reference-url: https://www.reddit.com/dev/api/
+  x-api:
+    api-key: ${X_API_KEY:}
+    bearer-token: ${X_BEARER_TOKEN:}
+    reference-url: https://developer.twitter.com/en/docs/twitter-api
+  meta-ads-library:
+    access-token: ${META_ADS_LIBRARY_ACCESS_TOKEN:}
+    reference-url: https://www.facebook.com/ads/library/api/
+  job-market:
+    api-key: ${JOB_MARKET_API_KEY:}
+    provider: ${JOB_MARKET_PROVIDER:adzuna}
+    app-id: ${JOB_MARKET_APP_ID:}
+    reference-url: https://developer.adzuna.com/
+
+# DSRC-04 pipeline ingestion (new 10-source pipeline)
+pipeline:
+  ingestion:
+    interval-ms: 900000         # 15 minutes
+    timeout-seconds: 600        # 10 minutes max wait for parallel ingestion cycle
+    enabled: true
+
+  # OAuth 2.0 configuration per platform
+  oauth:
+    platforms:
+      # === DSRC-03 OAuth platforms ===
+      ebay:
+        client-id: ${EBAY_OAUTH_CLIENT_ID:}
+        client-secret: ${EBAY_OAUTH_CLIENT_SECRET:}
+        access-token: ${EBAY_OAUTH_ACCESS_TOKEN:}
+        refresh-token: ${EBAY_OAUTH_REFRESH_TOKEN:}
+        token-url: https://api.ebay.com/identity/v1/oauth2/token
+        scope: https://api.ebay.com/oauth/api_scope
+      reddit:
+        client-id: ${REDDIT_OAUTH_CLIENT_ID:}
+        client-secret: ${REDDIT_OAUTH_CLIENT_SECRET:}
+        access-token: ${REDDIT_OAUTH_ACCESS_TOKEN:}
+        refresh-token: ${REDDIT_OAUTH_REFRESH_TOKEN:}
+        token-url: https://www.reddit.com/api/v1/access_token
+        scope: read
+      x-api:
+        client-id: ${X_OAUTH_CLIENT_ID:}
+        client-secret: ${X_OAUTH_CLIENT_SECRET:}
+        access-token: ${X_OAUTH_ACCESS_TOKEN:}
+        refresh-token: ${X_OAUTH_REFRESH_TOKEN:}
+        token-url: https://api.twitter.com/2/oauth2/token
+        scope: tweet.read users.read
+      meta-ads-library:
+        client-id: ${META_ADS_LIBRARY_CLIENT_ID:}
+        client-secret: ${META_ADS_LIBRARY_CLIENT_SECRET:}
+        access-token: ${META_ADS_LIBRARY_ACCESS_TOKEN:}
+        refresh-token: ${META_ADS_LIBRARY_REFRESH_TOKEN:}
+        token-url: https://graph.facebook.com/v18.0/oauth/access_token
+        scope: ads_read
+
+  # Rate limiting (permits per second per platform)
+  rate-limit:
+    # === DSRC-03 — 10 new market-data sources ===
+    pytrends: 0.5
+    yelp-fusion: 0.1
+    foursquare-places: 0.2
+    skyscanner: 0.1
+    bing-webmaster: 0.05
+    ebay: 0.2
+    reddit: 0.5
+    x-api: 0.3
+    meta-ads-library: 0.1
+    job-market: 0.2
+    pagespeed-insights: 0.5
+    census-api: 10.0
+
+# Source attribution & verification
+source-verification:
+  stale-threshold-days: 30
+
+# KPI CSV auto-export after each ingestion cycle (disabled — use API endpoint /api/export/csv instead)
+kpi-csv-writer:
+  enabled: false
+
+# Data refresh
+data-refresh:
+  dashboard-interval-minutes: 5
+  kpi-staleness-threshold-minutes: 15
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.autoresolve.mediabuying: DEBUG
+    com.autoresolve.mediabuying.integration: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  health:
+    db:
+      enabled: true
+
+# DSRC-05 — Stage 2: Sector Classification
+sector-classification:
+  keyword-rules:
+    technology:
+      - software
+      - saas
+      - cloud
+      - ai
+      - it-services
+      - tech
+      - digital
+      - platform
+      - app
+      - startup
+    finance:
+      - bank
+      - finance
+      - insurance
+      - investment
+      - trading
+      - fintech
+      - payment
+      - lending
+    manufacturing:
+      - manufacturing
+      - industrial
+      - factory
+      - production
+      - supply-chain
+      - logistics
+    retail:
+      - retail
+      - ecommerce
+      - shop
+      - store
+      - marketplace
+      - consumer-goods
+      - fashion
+    health-wellness:
+      - health
+      - wellness
+      - fitness
+      - medical
+      - pharma
+      - healthcare
+      - nutrition
+    travel:
+      - travel
+      - hotel
+      - flight
+      - tourism
+      - hospitality
+      - airline
+      - booking
+    job-market:
+      - job
+      - hiring
+      - career
+      - employment
+      - recruitment
+      - staffing
+      - hr
+  fallback-source-map:
+    pytrends: technology
+    yelp: local-business
+    foursquare: local-business
+    skyscanner: travel
+    bing-webmaster: technology
+    ebay: retail
+    reddit: technology
+    x-social: technology
+    meta-ads: retail
+    job-market: job-market
+
+# DSRC-06 — Stage 3: Company/Platform Grouping
+company-platform-mapping:
+  source-extraction-patterns:
+    ebay: "seller:(\\w+)"
+    yelp: "business:(.+)"
+    reddit: "brand:(\\w+)"
+    pytrends: "keyword-as-company"
+    default: "source-name"
+  business-type-to-platform:
+    local-business:
+      - yelp_ads
+      - foursquare_ads
+    e-commerce:
+      - google_shopping
+      - meta_ads
+    b2b-saas:
+      - linkedin_ads
+    travel:
+      - bing_ads
+      - skyscanner_ads
+    job-market:
+      - linkedin_ads
+      - google_ads
+  default-platform-per-sector:
+    technology: linkedin_ads
+    finance: linkedin_ads
+    manufacturing: google_ads
+    retail: meta_ads
+    health-wellness: google_ads
+    travel: bing_ads
+    job-market: linkedin_ads
+
+# DSRC-07 — Stage 4: KPI Building (Synthesis Weights)
+# Flat property names map 1:1 to KpiSignalAggregator @ConfigurationProperties
+kpi-synthesis:
+  # ROAS sub-weights
+  trend-weight: 0.3
+  search-volume-weight: 0.4
+  pricing-weight: 0.3
+  # CAC sub-weights
+  market-activity-weight: 0.5
+  competitiveness-weight: 0.5
+  # CLTV sub-weights
+  demand-weight: 0.4
+  sentiment-weight: 0.3
+  foot-traffic-weight: 0.3
+  # Composite weighted-average weights
+  conversion-rate-weight: 0.25
+  scalability-weight: 0.25
+  attribution-accuracy-weight: 0.25
+  attribute-trend-weight: 0.25
+  # Source → KPI dimension mapping
+  source-to-kpi:
+    pytrends: [trend, search-volume]
+    yelp: [foot-traffic, pricing, sentiment]
+    foursquare: [foot-traffic, demand]
+    skyscanner: [pricing, demand, trend]
+    bing-webmaster: [search-volume, competitiveness]
+    ebay: [pricing, demand, market-activity]
+    reddit: [sentiment, trend, competitiveness]
+    x-social: [sentiment, trend]
+    meta-ads: [market-activity, competitiveness, pricing]
+    job-market: [market-activity, demand]

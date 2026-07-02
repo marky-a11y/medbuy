@@ -1,0 +1,169 @@
+# ------------------------------------------------------------------------------
+# Media Buying Dashboard - Default Values
+# ------------------------------------------------------------------------------
+
+# Global settings
+global:
+  environment: dev
+  region: us-east-1
+
+# Application image
+image:
+  repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/media-buying-dashboard
+  tag: latest
+  pullPolicy: Always
+
+# Number of replicas
+replicaCount: 2
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 6800
+  targetPort: 6800
+  annotations: {}
+
+# Ingress configuration
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/success-codes: "200"
+  hosts:
+    - host: dashboard.media-buying.autoresolve.com
+      paths:
+        - /
+  tls: []
+  #  - secretName: media-buying-dashboard-tls
+  #    hosts:
+  #      - dashboard.media-buying.autoresolve.com
+
+# Horizontal Pod Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  customMetrics:
+    - type: Pods
+      metric:
+        name: kpi_query_latency_seconds
+      target:
+        type: AverageValue
+        averageValue: 1
+
+# Resource requests and limits
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+
+# Environment variables (from ConfigMap and Secrets)
+env:
+  # Logging
+  LOGGING_LEVEL_COM_AUTORESOLVE: DEBUG
+  LOGGING_LEVEL_ROOT: INFO
+  SERVER_PORT: "6800"
+  SERVER_ADDRESS: "0.0.0.0"
+  SPRING_PROFILES_ACTIVE: k8s
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
+  MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED: "true"
+
+# ConfigMap data (non-sensitive)
+configMap:
+  dashboardRefreshInterval: "5"
+  kpiStalenessThreshold: "15"
+  scoringWeightsDefault: '{"ROAS":0.25,"CAC":0.20,"CLTV":0.20,"CONVERSION_RATE":0.15,"SCALABILITY":0.10,"ATTRIBUTION_ACCURACY":0.10}'
+
+# External Secrets configuration
+externalSecret:
+  name: media-buying-dashboard-secrets
+  refreshInterval: "1h"
+  secrets:
+    - name: db-credentials
+      secretKey: SPRING_DATASOURCE_URL
+      remoteRef:
+        key: media-buying/{{ .Values.global.environment }}/db-credentials
+        property: connectionString
+    - name: db-username
+      secretKey: SPRING_DATASOURCE_USERNAME
+      remoteRef:
+        key: media-buying/{{ .Values.global.environment }}/db-credentials
+        property: username
+    - name: db-password
+      secretKey: SPRING_DATASOURCE_PASSWORD
+      remoteRef:
+        key: media-buying/{{ .Values.global.environment }}/db-credentials
+        property: password
+    - name: redis-auth
+      secretKey: SPRING_REDIS_PASSWORD
+      remoteRef:
+        key: media-buying/{{ .Values.global.environment }}/redis-auth
+    - name: google-ads-api-key
+      secretKey: INTEGRATION_GOOGLE_ADS_API_KEY
+      remoteRef:
+        key: media-buying/{{ .Values.global.environment }}/google-ads-api-key
+    - name: meta-ads-api-key
+      secretKey: INTEGRATION_META_ADS_API_KEY
+      remoteRef:
+        key: media-buying/{{ .Values.global.environment }}/meta-ads-api-key
+    - name: tiktok-ads-api-key
+      secretKey: INTEGRATION_TIKTOK_ADS_API_KEY
+      remoteRef:
+        key: media-buying/{{ .Values.global.environment }}/tiktok-ads-api-key
+    - name: linkedin-ads-api-key
+      secretKey: INTEGRATION_LINKEDIN_ADS_API_KEY
+      remoteRef:
+        key: media-buying/{{ .Values.global.environment }}/linkedin-ads-api-key
+    - name: iheart-radio-api-key
+      secretKey: INTEGRATION_IHEART_RADIO_API_KEY
+      remoteRef:
+        key: media-buying/{{ .Values.global.environment }}/iheart-radio-api-key
+
+# ServiceAccount
+serviceAccount:
+  create: true
+  name: media-buying-dashboard
+  annotations:
+    eks.amazonaws.com/role-arn: ""
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Node selector
+nodeSelector:
+  node-type: dashboard
+
+# Affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: media-buying-dashboard
+
+# Tolerations
+tolerations: []
+
+# ServiceMonitor for Prometheus
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /actuator/prometheus
+  port: http

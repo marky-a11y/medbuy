@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="fragments/layout">
+
+<head>
+    <title th:text="'ROI Calculator - MedBuy'">ROI Calculator - MedBuy</title>
+    <th:block layout:fragment="head">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" th:href="@{/css/dashboard-theme.css}">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"/>
+        <style>
+            /* Formula dialog modal */
+            .formula-modal-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.65);
+                z-index: 9999;
+                justify-content: center;
+                align-items: center;
+            }
+            .formula-modal {
+                background: #ffffff;
+                border-radius: 16px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                max-width: 520px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+                padding: 0;
+            }
+            .formula-modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px 24px;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            .formula-modal-header h3 {
+                margin: 0;
+                font-size: 1.25rem;
+                font-weight: 600;
+                color: #222;
+            }
+            .formula-modal-close {
+                background: none;
+                border: none;
+                font-size: 22px;
+                font-weight: 700;
+                color: #000;
+                cursor: pointer;
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background 0.15s ease;
+            }
+            .formula-modal-close:hover {
+                background: #f0f0f0;
+            }
+            .formula-modal-body {
+                padding: 24px;
+            }
+            .formula-section {
+                margin-bottom: 20px;
+            }
+            .formula-section:last-child {
+                margin-bottom: 0;
+            }
+            .formula-section h4 {
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #666;
+                margin: 0 0 8px 0;
+            }
+            .formula-section p {
+                margin: 0;
+                font-size: 0.9375rem;
+                line-height: 1.6;
+                color: #333;
+            }
+            .formula-math {
+                font-family: 'JetBrains Mono', 'Consolas', monospace;
+                font-size: 0.9375rem;
+                background: #f5f5f5;
+                padding: 12px 16px;
+                border-radius: 8px;
+                color: #222;
+                margin: 0;
+            }
+            .formula-link {
+                color: var(--primary);
+                font-size: 0.75rem;
+                font-weight: 500;
+                cursor: pointer;
+                text-decoration: none;
+                display: inline-block;
+                margin-top: 4px;
+                transition: opacity 0.15s ease;
+            }
+            .formula-link:hover {
+                opacity: 0.8;
+                text-decoration: underline;
+            }
+        </style>
+    </th:block>
+</head>
+
+<body layout:fragment="body">
+    <main class="main-content">
+        <div th:replace="fragments/sidebar :: sidebar('calculator')"></div>
+        <div th:replace="fragments/topbar :: topbar"></div>
+
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <div class="page-header">
+                <div>
+                    <h2 class="font-display-lg" style="margin: 0;">Yelp Ads ROI Calculator</h2>
+                    <p style="color: var(--on-surface-variant); margin: var(--spacing-xs) 0 0 0;">
+                        Model projected returns using the Yelp Ads Funnel.
+                    </p>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-xl); align-items: start;">
+                <!-- Left Column: Selection + Form -->
+                <div>
+                    <!-- Market Configuration -->
+                    <div class="card">
+                        <h3 class="font-title-lg">Market Configuration</h3>
+                        <form th:action="@{/calculator}" method="get" style="margin-top: var(--spacing-lg);">
+                            <input type="hidden" name="platformId" th:value="${param.platformId}"/>
+                            <input type="hidden" name="sectorId" th:value="${param.sectorId}"/>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                                <!-- Advertising Platform -->
+                                <div>
+                                    <label for="selPlatform" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Advertising Platform</label>
+                                    <select id="selPlatform" name="platform"
+                                            style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); background-color: var(--surface); box-sizing: border-box;">
+                                        <option value="">Select...</option>
+                                        <option th:each="p : ${platforms}" th:value="${p.name}" th:text="${p.displayName}" th:selected="${p.name == selectedPlatform}">Platform</option>
+                                    </select>
+                                </div>
+
+                                <!-- Commerce Sector -->
+                                <div>
+                                    <label for="selSector" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Commerce Sector</label>
+                                    <select id="selSector" name="sector"
+                                            style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); background-color: var(--surface); box-sizing: border-box;">
+                                        <option value="">Select...</option>
+                                        <option th:each="s : ${sectors}" th:value="${s.name}" th:text="${s.displayName}" th:selected="${s.name == selectedSector}">Sector</option>
+                                    </select>
+                                </div>
+
+                                <!-- Business Type -->
+                                <div>
+                                    <label for="selBusinessType" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Business Type</label>
+                                    <select id="selBusinessType" name="businessType"
+                                            style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); background-color: var(--surface); box-sizing: border-box;">
+                                        <option value="">Select...</option>
+                                        <option th:each="b : ${businessTypes}" th:value="${b.value}" th:text="${b.label}" th:selected="${b.value == selectedBusinessType}">Type</option>
+                                    </select>
+                                </div>
+
+                                <!-- Major US City -->
+                                <div>
+                                    <label for="selCity" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Major US City</label>
+                                    <select id="selCity" name="city"
+                                            style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); background-color: var(--surface); box-sizing: border-box;">
+                                        <option value="">Select...</option>
+                                        <option th:each="c : ${usCities}" th:value="${c}" th:text="${c}" th:selected="${c == selectedCity}">City</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: var(--spacing-lg);">
+                                <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">trending_up</span>
+                                Get Market Estimates
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Calculator Form (shown only when estimates loaded) -->
+                    <div th:if="${estimates != null}" class="card" style="margin-top: var(--spacing-lg);">
+                        <h3 class="font-title-lg">Campaign Parameters</h3>
+
+                        <div th:if="${estimates.dataSourceDescription != null}" style="padding: var(--spacing-md); background-color: var(--success-container, rgba(34, 197, 94, 0.12)); border: 1px solid var(--success-green); border-radius: var(--radius-md); margin: var(--spacing-lg) 0; color: var(--success-green);">
+                            <span style="font-weight: 600;">Values pre-populated from industry benchmarks</span>
+                            <span th:text="' — ' + ${estimates.dataSourceDescription}"></span>
+                        </div>
+
+                        <form th:action="@{/calculator/compute}" th:object="${calculatorInput}" method="post" style="margin-top: var(--spacing-lg);">
+                            <!-- Ad Performance Assumptions -->
+                            <h4 style="font-size: var(--font-size-sm); text-transform: uppercase; color: var(--primary); margin: 0 0 var(--spacing-sm) 0; font-weight: 600; letter-spacing: 0.05em;">Ad Performance Assumptions</h4>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="monthlyAdSpend" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Monthly Ad Spend ($)</label>
+                                <input type="number" id="monthlyAdSpend" th:field="*{monthlyAdSpend}" step="0.01" min="0" required
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                            </div>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="costPerClick" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Cost Per Click (CPC) ($)</label>
+                                <input type="number" id="costPerClick" th:field="*{costPerClick}" step="0.01" min="0" required
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                            </div>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="clickThroughRate" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Click-Through Rate (CTR) (%)</label>
+                                <input type="number" id="clickThroughRate" th:field="*{clickThroughRate}" step="0.1" min="0" required
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                                <small style="display: block; margin-top: var(--spacing-xs); color: var(--on-surface-variant); font-size: var(--font-size-sm);">(e.g., 5 for 5%)</small>
+                            </div>
+
+                            <!-- Funnel Conversion Rates -->
+                            <h4 style="font-size: var(--font-size-sm); text-transform: uppercase; color: var(--primary); margin: var(--spacing-lg) 0 var(--spacing-sm) 0; font-weight: 600; letter-spacing: 0.05em;">Funnel Conversion Rates</h4>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="clickToLeadRate" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Click → Lead Rate (%)</label>
+                                <input type="number" id="clickToLeadRate" th:field="*{clickToLeadRate}" step="0.1" min="0" max="100" required
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                                <small style="display: block; margin-top: var(--spacing-xs); color: var(--on-surface-variant); font-size: var(--font-size-sm);">(e.g., 12 for 12%)</small>
+                            </div>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="leadToCustomerRate" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Lead → Customer Rate (%)</label>
+                                <input type="number" id="leadToCustomerRate" th:field="*{leadToCustomerRate}" step="0.1" min="0" max="100" required
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                            </div>
+
+                            <!-- Revenue Assumptions -->
+                            <h4 style="font-size: var(--font-size-sm); text-transform: uppercase; color: var(--primary); margin: var(--spacing-lg) 0 var(--spacing-sm) 0; font-weight: 600; letter-spacing: 0.05em;">Revenue Assumptions</h4>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="monthlyRevenuePerCustomer" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Monthly Revenue Per Customer ($)</label>
+                                <input type="number" id="monthlyRevenuePerCustomer" th:field="*{monthlyRevenuePerCustomer}" step="0.01" min="0" required
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                            </div>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="averageRetentionMonths" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Average Retention (months)</label>
+                                <input type="number" id="averageRetentionMonths" th:field="*{averageRetentionMonths}" step="1" min="0" required
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                            </div>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="grossMargin" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Gross Margin (%)</label>
+                                <input type="number" id="grossMargin" name="grossMargin"
+                                       th:value="*{grossMargin != null ? grossMargin : ''}"
+                                       step="1" min="0" max="100" required
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                                <small style="display: block; margin-top: var(--spacing-xs); color: var(--on-surface-variant); font-size: var(--font-size-sm);">(e.g., 70 for 70%)</small>
+                            </div>
+
+                            <!-- Business Segmentation (optional) -->
+                            <h4 style="font-size: var(--font-size-sm); text-transform: uppercase; color: var(--primary); margin: var(--spacing-lg) 0 var(--spacing-sm) 0; font-weight: 600; letter-spacing: 0.05em;">Business Segmentation (optional)</h4>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="businessType" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Business Type</label>
+                                <select id="businessType" name="businessType"
+                                        style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); background-color: var(--surface);">
+                                    <option value="">Select...</option>
+                                    <option value="gym" th:selected="*{businessType == 'gym'}">Gym / Fitness Center</option>
+                                    <option value="personal_training" th:selected="*{businessType == 'personal_training'}">Personal Training</option>
+                                    <option value="yoga" th:selected="*{businessType == 'yoga'}">Yoga / Pilates Studio</option>
+                                    <option value="crossfit" th:selected="*{businessType == 'crossfit'}">CrossFit Box</option>
+                                    <option value="other" th:selected="*{businessType == 'other'}">Other</option>
+                                </select>
+                            </div>
+
+                            <!-- Local Market Factors (optional) -->
+                            <h4 style="font-size: var(--font-size-sm); text-transform: uppercase; color: var(--primary); margin: var(--spacing-lg) 0 var(--spacing-sm) 0; font-weight: 600; letter-spacing: 0.05em;">Local Market Factors (optional)</h4>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="populationDensity" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Population Density</label>
+                                <input type="number" id="populationDensity" name="populationDensity"
+                                       th:value="*{populationDensity != null ? populationDensity : ''}"
+                                       step="0.1" min="0" max="1.0"
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                                <small style="display: block; margin-top: var(--spacing-xs); color: var(--on-surface-variant); font-size: var(--font-size-sm);">Relative score (0.0 – 1.0)</small>
+                            </div>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="incomeLevel" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Income Level</label>
+                                <input type="number" id="incomeLevel" name="incomeLevel"
+                                       th:value="*{incomeLevel != null ? incomeLevel : ''}"
+                                       step="0.1" min="0" max="1.0"
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                                <small style="display: block; margin-top: var(--spacing-xs); color: var(--on-surface-variant); font-size: var(--font-size-sm);">Relative score (0.0 – 1.0)</small>
+                            </div>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="competitorSaturation" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Competitor Saturation</label>
+                                <input type="number" id="competitorSaturation" name="competitorSaturation"
+                                       th:value="*{competitorSaturation != null ? competitorSaturation : ''}"
+                                       step="0.1" min="0" max="1.0"
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                                <small style="display: block; margin-top: var(--spacing-xs); color: var(--on-surface-variant); font-size: var(--font-size-sm);">Relative score (0.0 – 1.0)</small>
+                            </div>
+
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <label for="yelpRating" style="display: block; margin-bottom: var(--spacing-xs); font-weight: 500;">Avg Yelp Rating</label>
+                                <input type="number" id="yelpRating" name="yelpRating"
+                                       th:value="*{yelpRating != null ? yelpRating : ''}"
+                                       step="0.1" min="1.0" max="5.0"
+                                       style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--outline-variant); border-radius: var(--radius-md); font-family: var(--font-family); box-sizing: border-box;">
+                                <small style="display: block; margin-top: var(--spacing-xs); color: var(--on-surface-variant); font-size: var(--font-size-sm);">1.0 – 5.0</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: var(--spacing-md);">
+                                <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">calculate</span>
+                                Calculate ROI
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right Column: Results -->
+                <div>
+                    <div th:if="${result != null}" class="card">
+                        <h3 class="font-title-lg">Projected Results</h3>
+                        <div style="margin-top: var(--spacing-lg);">
+
+                            <!-- Funnel Summary -->
+                            <div style="padding: var(--spacing-md); background-color: var(--surface-container-low); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); border-left: 4px solid var(--primary);">
+                                <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--spacing-sm); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Funnel Summary</div>
+                                <div style="margin-bottom: var(--spacing-xs);">
+                                    <span style="color: var(--text-secondary);">Impressions:</span>
+                                    <span style="font-weight: 700;" th:text="${#numbers.formatDecimal(result.impressions, 0, 'COMMA', 0, 'POINT')}">0</span>
+                                </div>
+                                <div style="margin-bottom: var(--spacing-xs);">
+                                    <span style="color: var(--text-secondary);">Clicks:</span>
+                                    <span style="font-weight: 700;" th:text="${#numbers.formatDecimal(result.clicks, 0, 'COMMA', 0, 'POINT')}">0</span>
+                                    <span style="color: var(--text-secondary); margin: 0 var(--spacing-xs);">→</span>
+                                    <span style="color: var(--text-secondary);">Leads:</span>
+                                    <span style="font-weight: 700;" th:text="${#numbers.formatDecimal(result.leads, 0, 'COMMA', 0, 'POINT')}">0</span>
+                                    <span style="color: var(--text-secondary); margin: 0 var(--spacing-xs);">→</span>
+                                    <span style="color: var(--text-secondary);">Customers:</span>
+                                    <span style="font-weight: 700;" th:text="${#numbers.formatDecimal(result.customers, 0, 'COMMA', 0, 'POINT')}">0</span>
+                                </div>
+                                <div>
+                                    <span style="color: var(--text-secondary);">Revenue:</span>
+                                    <span style="font-weight: 700; color: var(--success-green);" th:text="'$' + ${#numbers.formatDecimal(result.revenue, 0, 'COMMA', 2, 'POINT')}">$0.00</span>
+                                </div>
+                            </div>
+
+                            <!-- Key Metrics -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                                <div style="text-align: center; padding: var(--spacing-md); background-color: var(--surface-container-low); border-radius: var(--radius-md);">
+                                    <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--spacing-xs); font-weight: 500;">ROAS</div>
+                                    <div style="font-size: 2rem; font-weight: 700; color: var(--success-green);" th:text="${#numbers.formatDecimal(result.roas, 1, 1)} + 'x'">0.0x</div>
+                                    <a class="formula-link" href="javascript:void(0)" onclick="showFormulaModal('roas')">Show Formula</a>
+                                </div>
+                                <div style="text-align: center; padding: var(--spacing-md); background-color: var(--surface-container-low); border-radius: var(--radius-md);">
+                                    <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--spacing-xs); font-weight: 500;">CAC</div>
+                                    <div style="font-size: 2rem; font-weight: 700; color: var(--danger-red);" th:text="'$' + ${#numbers.formatDecimal(result.cac, 0, 'COMMA', 0, 'POINT')}">$0</div>
+                                    <a class="formula-link" href="javascript:void(0)" onclick="showFormulaModal('cac')">Show Formula</a>
+                                </div>
+                                <div style="text-align: center; padding: var(--spacing-md); background-color: var(--surface-container-low); border-radius: var(--radius-md);">
+                                    <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--spacing-xs); font-weight: 500;">LTV</div>
+                                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary);" th:text="'$' + ${#numbers.formatDecimal(result.ltv, 0, 'COMMA', 0, 'POINT')}">$0</div>
+                                    <a class="formula-link" href="javascript:void(0)" onclick="showFormulaModal('ltv')">Show Formula</a>
+                                </div>
+                                <div style="text-align: center; padding: var(--spacing-md); background-color: var(--surface-container-low); border-radius: var(--radius-md);">
+                                    <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--spacing-xs); font-weight: 500;">LTV : CAC</div>
+                                    <div style="font-size: 2rem; font-weight: 700; color: var(--success-green);" th:text="${#numbers.formatDecimal(result.ltvToCac, 1, 1)} + 'x'">0.0x</div>
+                                    <a class="formula-link" href="javascript:void(0)" onclick="showFormulaModal('ltvCac')">Show Formula</a>
+                                </div>
+                            </div>
+
+                            <!-- ROI Range -->
+                            <div style="display: flex; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                                <div style="flex: 1; text-align: center; padding: var(--spacing-md); background-color: var(--surface-container-low); border-radius: var(--radius-md); border-top: 3px solid var(--warning-yellow);">
+                                    <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--spacing-xs); font-weight: 500;">Low Case ROI</div>
+                                    <div style="font-size: 1.75rem; font-weight: 700; color: var(--warning-yellow);" th:text="${#numbers.formatDecimal(result.lowCaseRoi, 1, 1)} + 'x'">0.0x</div>
+                                    <a class="formula-link" href="javascript:void(0)" onclick="showFormulaModal('lowRoi')">Show Formula</a>
+                                </div>
+                                <div style="flex: 1; text-align: center; padding: var(--spacing-md); background-color: var(--surface-container-low); border-radius: var(--radius-md); border-top: 3px solid var(--success-green);">
+                                    <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--spacing-xs); font-weight: 500;">High Case ROI</div>
+                                    <div style="font-size: 1.75rem; font-weight: 700; color: var(--success-green);" th:text="${#numbers.formatDecimal(result.highCaseRoi, 1, 1)} + 'x'">0.0x</div>
+                                    <a class="formula-link" href="javascript:void(0)" onclick="showFormulaModal('highRoi')">Show Formula</a>
+                                </div>
+                            </div>
+
+                            <!-- Confidence Badge -->
+                            <div style="margin-bottom: var(--spacing-lg); text-align: center;">
+                                <span th:style="'display: inline-block; padding: var(--spacing-xs) var(--spacing-md); border-radius: var(--radius-md); font-weight: 600; text-transform: uppercase; font-size: var(--font-size-sm); letter-spacing: 0.05em; background-color: var(--surface-container); color: ' + (${result.confidence == 'HIGH'} ? 'var(--success-green)' : (${result.confidence == 'MEDIUM'} ? 'var(--warning-yellow)' : 'var(--danger-red)')) + ';'"
+                                      th:text="${result.confidence}">MEDIUM</span>
+                            </div>
+
+                            <!-- Details Table -->
+                            <div style="border-top: 1px solid var(--outline-variant);">
+                                <div style="display: flex; justify-content: space-between; padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--outline-variant);">
+                                    <span style="color: var(--text-secondary);">Funnel Conversion Rates</span>
+                                    <span style="font-weight: 500; text-align: right;" th:text="'Click→Lead: ' + ${#numbers.formatDecimal(result.clickToLeadRate, 1, 1)} + '%, Lead→Customer: ' + ${#numbers.formatDecimal(result.leadToCustomerRate, 1, 1)} + '%'">Click→Lead: 0%, Lead→Customer: 0%</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--outline-variant);">
+                                    <span style="color: var(--text-secondary);">Revenue Model</span>
+                                    <span style="font-weight: 500; text-align: right;" th:text="'Monthly: $' + ${#numbers.formatDecimal(result.monthlyRevenuePerCustomer, 0, 'COMMA', 2, 'POINT')} + ', Retention: ' + ${result.averageRetentionMonths} + ' mo, Margin: ' + ${result.grossMargin} + '%'">Monthly: $0, Retention: 0 mo, Margin: 0%</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--outline-variant);">
+                                    <span style="color: var(--text-secondary);">Media Summary</span>
+                                    <span style="font-weight: 500; text-align: right;" th:text="'Spend: $' + ${#numbers.formatDecimal(result.adSpend, 0, 'COMMA', 2, 'POINT')} + ', Impressions: ' + ${#numbers.formatDecimal(result.impressions, 0, 'COMMA', 0, 'POINT')} + ', Clicks: ' + ${#numbers.formatDecimal(result.clicks, 0, 'COMMA', 0, 'POINT')}">Spend: $0, Impressions: 0, Clicks: 0</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: var(--spacing-sm) 0;">
+                                    <span style="color: var(--text-secondary);">Customer Economics</span>
+                                    <span style="font-weight: 500; text-align: right;" th:text="'Rev: $' + ${#numbers.formatDecimal(result.revenue, 0, 'COMMA', 2, 'POINT')} + ', CAC: $' + ${#numbers.formatDecimal(result.cac, 0, 'COMMA', 2, 'POINT')} + ', LTV: $' + ${#numbers.formatDecimal(result.ltv, 0, 'COMMA', 2, 'POINT')} + ', LTV:CAC: ' + ${#numbers.formatDecimal(result.ltvToCac, 1, 1)} + 'x'">Rev: $0, CAC: $0, LTV: $0, LTV:CAC: 0x</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Empty results placeholder -->
+                    <div th:if="${result == null}" class="card" style="display: flex; align-items: center; justify-content: center; min-height: 300px;">
+                        <p style="color: var(--text-muted); text-align: center;">
+                            Fill in the campaign parameters and click<br>
+                            <strong>"Calculate ROI"</strong> to see projected results.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: var(--spacing-xl);">
+                <a th:href="@{/dashboard.xhtml}" class="btn btn-outline">
+                    <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">arrow_back</span>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Formula Dialog Modal -->
+        <div id="formulaModal" class="formula-modal-overlay" onclick="closeFormulaModal()">
+            <div class="formula-modal" onclick="event.stopPropagation()">
+                <div class="formula-modal-header">
+                    <h3 id="formulaModalTitle">ROAS</h3>
+                    <button class="formula-modal-close" onclick="closeFormulaModal()">✕</button>
+                </div>
+                <div class="formula-modal-body">
+                    <!-- ROAS -->
+                    <div id="formula-roas" class="formula-content">
+                        <div class="formula-section">
+                            <h4>Description</h4>
+                            <p>Return on Ad Spend (ROAS) measures the total revenue generated for every dollar spent on advertising. A higher ROAS indicates more effective and profitable ad campaigns.</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Formula</h4>
+                            <p class="formula-math">ROAS = Revenue ÷ Ad Spend</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Calculation</h4>
+                            <p class="formula-math" th:text="'ROAS = $' + ${#numbers.formatDecimal(result.revenue, 0, 'COMMA', 2, 'POINT')} + ' ÷ $' + ${#numbers.formatDecimal(result.adSpend, 0, 'COMMA', 2, 'POINT')} + ' = ' + ${#numbers.formatDecimal(result.roas, 1, 1)} + 'x'">ROAS = $6,000.00 ÷ $1,000.00 = 6.0x</p>
+                        </div>
+                    </div>
+                    <!-- CAC -->
+                    <div id="formula-cac" class="formula-content" style="display:none;">
+                        <div class="formula-section">
+                            <h4>Description</h4>
+                            <p>Customer Acquisition Cost (CAC) measures the average cost of acquiring a single new customer through advertising. A lower CAC indicates more efficient customer acquisition.</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Formula</h4>
+                            <p class="formula-math">CAC = Ad Spend ÷ New Customers</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Calculation</h4>
+                            <p class="formula-math" th:text="'CAC = $' + ${#numbers.formatDecimal(result.adSpend, 0, 'COMMA', 2, 'POINT')} + ' ÷ ' + ${#numbers.formatDecimal(result.customers, 0, 'COMMA', 0, 'POINT')} + ' = $' + ${#numbers.formatDecimal(result.cac, 0, 'COMMA', 2, 'POINT')}">CAC = $1,000.00 ÷ 50 = $20.00</p>
+                        </div>
+                    </div>
+                    <!-- LTV -->
+                    <div id="formula-ltv" class="formula-content" style="display:none;">
+                        <div class="formula-section">
+                            <h4>Description</h4>
+                            <p>Customer Lifetime Value (LTV) estimates the total gross profit a business can expect to earn from a single customer over the entire duration of their relationship.</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Formula</h4>
+                            <p class="formula-math">LTV = Monthly Revenue × Retention Months × Gross Margin</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Calculation</h4>
+                            <p class="formula-math" th:text="'LTV = $' + ${#numbers.formatDecimal(result.monthlyRevenuePerCustomer, 0, 'COMMA', 2, 'POINT')} + ' × ' + ${result.averageRetentionMonths} + ' × ' + ${#numbers.formatDecimal(result.grossMargin, 0, 'COMMA', 1, 'POINT')} + '% = $' + ${#numbers.formatDecimal(result.ltv, 0, 'COMMA', 2, 'POINT')}">LTV = $100.00 × 24 × 70% = $1,680.00</p>
+                        </div>
+                    </div>
+                    <!-- LTV:CAC -->
+                    <div id="formula-ltvCac" class="formula-content" style="display:none;">
+                        <div class="formula-section">
+                            <h4>Description</h4>
+                            <p>The LTV to CAC ratio compares the lifetime value of a customer to the cost of acquiring that customer. A ratio above 3:1 is generally considered healthy for sustainable growth.</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Formula</h4>
+                            <p class="formula-math">LTV : CAC = LTV ÷ CAC</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Calculation</h4>
+                            <p class="formula-math" th:text="'LTV : CAC = $' + ${#numbers.formatDecimal(result.ltv, 0, 'COMMA', 2, 'POINT')} + ' ÷ $' + ${#numbers.formatDecimal(result.cac, 0, 'COMMA', 2, 'POINT')} + ' = ' + ${#numbers.formatDecimal(result.ltvToCac, 1, 1)} + 'x'">LTV:CAC = $1,680.00 ÷ $20.00 = 84.0x</p>
+                        </div>
+                    </div>
+                    <!-- Low Case ROI -->
+                    <div id="formula-lowRoi" class="formula-content" style="display:none;">
+                        <div class="formula-section">
+                            <h4>Description</h4>
+                            <p>Low Case ROI models a pessimistic scenario where conversion rates are 30% lower and cost-per-click is 20% higher than your estimates, providing a conservative view of potential returns.</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Formula</h4>
+                            <p class="formula-math">Low Case ROI = Low Case Revenue ÷ Ad Spend</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Calculation</h4>
+                            <p class="formula-math" th:text="'Low Case ROI = $' + ${#numbers.formatDecimal(result.lowCaseRevenue, 0, 'COMMA', 2, 'POINT')} + ' ÷ $' + ${#numbers.formatDecimal(result.adSpend, 0, 'COMMA', 2, 'POINT')} + ' = ' + ${#numbers.formatDecimal(result.lowCaseRoi, 1, 1)} + 'x'">Low Case ROI = $3,234.00 ÷ $1,000.00 = 3.2x</p>
+                        </div>
+                    </div>
+                    <!-- High Case ROI -->
+                    <div id="formula-highRoi" class="formula-content" style="display:none;">
+                        <div class="formula-section">
+                            <h4>Description</h4>
+                            <p>High Case ROI models an optimistic scenario where conversion rates are 30% higher and cost-per-click is 15% lower than your estimates, showing the upper bound of potential returns.</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Formula</h4>
+                            <p class="formula-math">High Case ROI = High Case Revenue ÷ Ad Spend</p>
+                        </div>
+                        <div class="formula-section">
+                            <h4>Calculation</h4>
+                            <p class="formula-math" th:text="'High Case ROI = $' + ${#numbers.formatDecimal(result.highCaseRevenue, 0, 'COMMA', 2, 'POINT')} + ' ÷ $' + ${#numbers.formatDecimal(result.adSpend, 0, 'COMMA', 2, 'POINT')} + ' = ' + ${#numbers.formatDecimal(result.highCaseRoi, 1, 1)} + 'x'">High Case ROI = $9,828.00 ÷ $1,000.00 = 9.8x</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Floating Action Button -->
+    <button class="fab-button" title="AI Assistant — coming soon" onclick="alert('AI Assistant — coming soon');">
+        <span class="material-symbols-outlined fill">smart_toy</span>
+    </button>
+
+    <script>
+        /**
+         * Show the formula details modal for the given metric.
+         * @param {string} metric - one of 'roas', 'cac', 'ltv', 'ltvCac', 'lowRoi', 'highRoi'
+         */
+        function showFormulaModal(metric) {
+            // Hide all formula content divs
+            document.querySelectorAll('.formula-content').forEach(function(el) {
+                el.style.display = 'none';
+            });
+            // Show the selected metric content
+            var content = document.getElementById('formula-' + metric);
+            if (content) {
+                content.style.display = 'block';
+            }
+            // Update the title
+            var titles = {
+                roas: 'ROAS (Return on Ad Spend)',
+                cac: 'CAC (Customer Acquisition Cost)',
+                ltv: 'LTV (Customer Lifetime Value)',
+                ltvCac: 'LTV : CAC Ratio',
+                lowRoi: 'Low Case ROI',
+                highRoi: 'High Case ROI'
+            };
+            var titleEl = document.getElementById('formulaModalTitle');
+            if (titleEl) {
+                titleEl.textContent = titles[metric] || metric.toUpperCase();
+            }
+            // Show the modal overlay
+            var modal = document.getElementById('formulaModal');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        /**
+         * Close the formula details modal.
+         */
+        function closeFormulaModal() {
+            var modal = document.getElementById('formulaModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Close modal on Escape key press
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeFormulaModal();
+            }
+        });
+    </script>
+</body>
+</html>

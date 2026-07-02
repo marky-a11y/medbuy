@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/templates/template.xhtml">
+    <ui:define name="content">
+        <div class="page-header">
+            <div>
+                <h2 class="font-display-lg" style="margin: 0;">Information about the project</h2>
+                <p class="font-body-lg" style="color: var(--on-surface-variant); margin: var(--spacing-xs) 0 0 0;">
+                    Media Buying Dashboard — Project Overview
+                </p>
+            </div>
+        </div>
+
+        <div class="bento-grid">
+            <div class="col-span-12 card">
+                <div style="margin-bottom: var(--spacing-lg); line-height: 1.8; color: var(--text-secondary);">
+                    <div><strong>Submission for:</strong> It's Today Media Contest</div>
+                    <div><strong>Developer:</strong> Mark Y</div>
+                    <div><strong>Contact:</strong> msjoedaddy@gmail.com</div>
+                </div>
+                <h3 class="font-title-lg" style="margin: 0 0 var(--spacing-lg) 0;">Tech Stack</h3>
+                <div style="margin: 0; line-height: 1.7; color: var(--text-secondary);">
+                    <p style="margin: 0 0 var(--spacing-md) 0;">This project uses the following technologies and frameworks:</p>
+                    <ul style="margin: 0 0 var(--spacing-lg) 0; padding-left: var(--spacing-lg); line-height: 2;">
+                        <li><strong>Backend:</strong> Java 8, Spring Boot 2.7.18, Spring Security, Spring Data JPA, Hibernate</li>
+                        <li><strong>Frontend:</strong> PrimeFaces 11 (JSF), Thymeleaf, Thymeleaf Layout Dialect</li>
+                        <li><strong>Database:</strong> PostgreSQL (production), H2 (development/testing)</li>
+                        <li><strong>Build:</strong> Maven, JoinFaces 4.1.11</li>
+                        <li><strong>APIs:</strong> RESTful services, OAuth 2.0 integrations, 10+ market data source wrappers</li>
+                        <li><strong>AI/LLM:</strong> NVIDIA NIM integration for AI-powered insights</li>
+                        <li><strong>Caching:</strong> In-memory cache service with configurable TTL</li>
+                        <li><strong>Testing:</strong> JUnit 5, Mockito, Playwright (E2E)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-span-12 card">
+                <h3 class="font-title-lg" style="margin: 0 0 var(--spacing-lg) 0;">Features</h3>
+                <ul style="margin: 0; padding-left: var(--spacing-lg); line-height: 2; color: var(--text-secondary);">
+                    <li>Recommendation for Ad Platform + Commerce Sector + Client combinations</li>
+                    <li>See KPI metrics for recommendations</li>
+                    <li>See current portfolios</li>
+                    <li>See AI assisted recommendations for gaps in portfolio coverages</li>
+                    <li>See breakdowns for each ad platform including KPI metrics</li>
+                    <li>Return on Investment calculator for Ad Platform + Commerce Sector + Business Type</li>
+                </ul>
+            </div>
+
+            <div class="col-span-12 card">
+                <h3 class="font-title-lg" style="margin: 0 0 var(--spacing-lg) 0;">AI Models / Services</h3>
+                <div style="margin: 0; line-height: 1.7; color: var(--text-secondary);">
+                    <ul style="margin: 0; padding-left: var(--spacing-lg); line-height: 2;">
+                        <li><strong>Coding Tool:</strong> Opencode</li>
+                        <li><strong>Service:</strong> Opencode Go, NVIDIA NIM</li>
+                        <li><strong>Models:</strong> deepseek-v4-flash, glm-5.2, deepseek-v4-pro, kimi-k2.6, qwen3.7-plus, GPT-OSS-120B, MiniMax-M2.7</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-span-12 card">
+                <h3 class="font-title-lg" style="margin: 0 0 var(--spacing-lg) 0;">Challenges</h3>
+                <div style="margin: 0; line-height: 1.7; color: var(--text-secondary);">
+                    <p style="margin: 0 0 var(--spacing-md) 0;">
+                        I faced a lot of issues with getting the dashboard to load as it was returning 500 errors upon initial build.
+                        Eventually the LLM agent figured out the issue and I was able to load it and start working through implementing
+                        and improving the requirements.
+                    </p>
+                    <p style="margin: 0 0 var(--spacing-md) 0;">
+                        Initially, all of the data was mock data, so I found the correct API services to load some live data.
+                        Unfortunately a lot of the data sources are either paid-tier or very complex to implement in a short time.
+                    </p>
+                    <p style="margin: 0 0 var(--spacing-md) 0;">
+                        I had to change the strategy of producing relevant KPI metrics to match to the data sources, so that was
+                        quite a bit of rework.
+                    </p>
+                    <p style="margin: 0 0 var(--spacing-lg) 0;">
+                        Overall, since I don't have domain knowledge for media buying, I had to both learn and imagine what
+                        the relevant information and relevant format of the information is for an analyst to give them
+                        insights that may be time consuming or difficult to obtain without the use of a structured aggregation
+                        of varied data inputs and AI analysis of those inputs.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-span-12 card" style="text-align: center;">
+                <h:link outcome="/dashboard.xhtml" styleClass="btn btn-primary">
+                    <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">arrow_back</span>
+                    Back to Dashboard
+                </h:link>
+            </div>
+        </div>
+    </ui:define>
+</ui:composition>
+</html>

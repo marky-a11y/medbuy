@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="topbar" class="topbar">
+    <div class="topbar-left">
+        <!-- Search (disabled) -->
+        <div class="search-bar">
+            <span class="material-symbols-outlined search-icon">search</span>
+            <input type="text" placeholder="Search campaigns..." aria-label="Search campaigns" disabled="disabled"/>
+        </div>
+
+        <!-- Sector Filter -->
+        <div class="sector-filter-wrapper">
+            <select class="sector-filter-select"
+                    onchange="window.location.href = '/dashboard.xhtml?sector=' + this.value">
+                <option value="">All Sectors</option>
+                <option th:each="sector : ${sectors}"
+                        th:value="${sector.id}"
+                        th:text="${sector.displayName}"
+                        th:selected="${selectedSector != null && selectedSector == sector.id}">
+                </option>
+            </select>
+            <span class="material-symbols-outlined sector-filter-arrow">expand_more</span>
+        </div>
+    </div>
+
+    <div class="topbar-right">
+        <!-- Data Refresh Status -->
+        <div class="refresh-status">
+            <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">schedule</span>
+            <span>Data refreshed <span id="refreshMinutes">4</span> minutes ago</span>
+        </div>
+
+        <!-- Icon Buttons -->
+        <button class="topbar-icon-btn" title="Notifications" type="button">
+            <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <button class="topbar-icon-btn" title="Refresh" onclick="window.location.reload();">
+            <span class="material-symbols-outlined">refresh</span>
+        </button>
+        <button class="topbar-icon-btn" title="Filter" type="button">
+            <span class="material-symbols-outlined">filter_alt</span>
+        </button>
+
+        <div class="topbar-divider"></div>
+
+        <!-- User Profile -->
+        <div class="user-profile">
+            <div class="user-info">
+                <p class="user-name">Alex Rivera</p>
+                <p class="user-role">Senior Media Buyer</p>
+            </div>
+            <img class="user-avatar"
+                 src="https://ui-avatars.com/api/?name=Alex+Rivera&background=2563eb&color=fff&size=80"
+                 alt="Alex Rivera"/>
+        </div>
+    </div>
+</header>
+</body>
+</html>

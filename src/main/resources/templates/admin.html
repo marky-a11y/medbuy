@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="fragments/layout">
+
+<head>
+    <title th:text="'Admin Panel - MedBuy'">Admin Panel - MedBuy</title>
+    <th:block layout:fragment="head">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" th:href="@{/css/dashboard-theme.css}">
+    </th:block>
+</head>
+
+<body layout:fragment="body">
+    <main class="main-content">
+        <div th:replace="fragments/sidebar :: sidebar('admin')"></div>
+        <div th:replace="fragments/topbar :: topbar"></div>
+
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div class="page-header">
+                <div>
+                    <h2 class="font-display-lg" style="margin: 0;">Admin Panel</h2>
+                    <p style="color: var(--on-surface-variant); margin: var(--spacing-xs) 0 0 0;">
+                        Configure scoring weights for the composite scoring model.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="font-title-lg">Scoring Weight Configuration</h3>
+                <p style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
+                    Weights must be between 0.0 and 1.0. The sum of all weights should equal 1.0.
+                </p>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>KPI</th>
+                            <th>Current Weight</th>
+                            <th>Update</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="weight : ${weights}">
+                            <td th:text="${weight.kpiName}">ROAS</td>
+                            <td th:text="${weight.weight}">0.25</td>
+                            <td>
+                                <form th:action="@{/admin/weights/update}" method="post" style="display: flex; gap: var(--spacing-sm);">
+                                    <input type="hidden" name="id" th:value="${weight.id}">
+                                    <input type="number" name="weight" step="0.01" min="0" max="1"
+                                           th:value="${weight.weight}" required
+                                           style="width: 80px; padding: 4px 8px; border: 1px solid var(--outline-variant); border-radius: var(--radius-sm);">
+                                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: var(--spacing-xl);">
+                <a th:href="@{/dashboard.xhtml}" class="btn btn-outline">
+                    <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">arrow_back</span>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <button class="fab-button" title="AI Assistant — coming soon" onclick="alert('AI Assistant — coming soon');">
+        <span class="material-symbols-outlined fill">smart_toy</span>
+    </button>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# ------------------------------------------------------------------------------
+# Docker Build Context Ignore
+# ------------------------------------------------------------------------------
+.git/
+.gitignore
+*.md
+design/
+helm/
+infrastructure/
+.github/
+node_modules/
+*.log
+.DS_Store

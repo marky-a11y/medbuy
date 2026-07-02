@@ -1,0 +1,200 @@
+# =============================================================================
+# ELK Stack Helm Values (Elasticsearch + Kibana + Filebeat)
+# Chart: elastic/elasticsearch + elastic/kibana + elastic/filebeat
+# Used in: Week 11 - Observability & Ops Milestone
+# =============================================================================
+
+# ---- Elasticsearch ----
+# helm install elasticsearch elastic/elasticsearch -f elk-stack-values.yaml -n logging
+elasticsearch:
+  enabled: true
+  replicas: 3
+  minimumMasterNodes: 2
+  clusterName: media-buying-logs
+  esJavaOpts: "-Xms2g -Xmx2g"
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  volumeClaimTemplate:
+    accessModes: ["ReadWriteOnce"]
+    resources:
+      requests:
+        storage: 100Gi
+    storageClassName: gp3
+  esConfig:
+    elasticsearch.yml: |
+      xpack.security.enabled: true
+      xpack.security.transport.ssl.enabled: true
+      xpack.security.transport.ssl.verification_mode: certificate
+      xpack.security.transport.ssl.keystore.path: /usr/share/elasticsearch/config/certs/elastic-certificates.p12
+      xpack.security.transport.ssl.truststore.path: /usr/share/elasticsearch/config/certs/elastic-certificates.p12
+  protocol: https
+  secret:
+    enabled: true
+  ingress:
+    enabled: false  # Internal-only; access via kubectl port-forward or Kibana
+
+# ---- Kibana ----
+# helm install kibana elastic/kibana -f elk-stack-values.yaml -n logging
+kibana:
+  enabled: true
+  replicas: 1
+  elasticsearchHosts: "https://elasticsearch-master:9200"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  ingress:
+    enabled: true
+    hosts:
+      - kibana.media-buying.autoresolve.com
+    annotations:
+      kubernetes.io/ingress.class: alb
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/certificate-arn: "REPLACE_WITH_ACM_CERT_ARN"
+    tls:
+      - secretName: kibana-tls
+        hosts:
+          - kibana.media-buying.autoresolve.com
+  kibanaConfig:
+    kibana.yml: |
+      server.name: kibana
+      server.host: "0"
+      monitoring.ui.container.elasticsearch.enabled: true
+
+# ---- Filebeat DaemonSet ----
+# Deployed as DaemonSet on all nodes to collect container logs
+# Filebeat reads from /var/log/containers/*.log and ships to Elasticsearch
+filebeat:
+  enabled: true
+  daemonSet:
+    enabled: true
+    filebeatConfig:
+      filebeat.yml: |
+        filebeat.inputs:
+          # Container logs from the application pods
+          - type: container
+            enabled: true
+            paths:
+              - /var/log/containers/media-buying-dashboard-*.log
+            # Parse structured JSON logs from LogstashEncoder
+            json.keys_under_root: true
+            json.add_error_key: true
+            json.overwrite_keys: true
+            # Extract fields from JSON for structured search in Kibana
+            processors:
+              - add_kubernetes_metadata:
+                  host: ${NODE_NAME}
+                  matchers:
+                    - logs_path:
+                        logs_path: "/var/log/containers/"
+              - drop_fields:
+                  fields: ["agent", "ecs", "input", "stream"]
+                  ignore_missing: true
+            # Multiline handling: combine Java stack traces
+            multiline.pattern: '^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}'
+            multiline.negate: true
+            multiline.match: after
+            multiline.max_lines: 500
+
+          # Kubernetes system logs (kubelet, kube-proxy, etc.)
+          - type: container
+            enabled: true
+            paths:
+              - /var/log/containers/kube-*.log
+            processors:
+              - add_kubernetes_metadata:
+                  host: ${NODE_NAME}
+                  matchers:
+                    - logs_path:
+                        logs_path: "/var/log/containers/"
+
+          # Filebeat internal logs
+          - type: filestream
+            enabled: true
+            id: filebeat-internal
+            paths:
+              - /tmp/filebeat*.log
+
+        # Output to Elasticsearch
+        output.elasticsearch:
+          hosts: '["https://elasticsearch-master:9200"]'
+          username: "elastic"
+          password: "${ELASTIC_PASSWORD}"
+          protocol: https
+          ssl.verification_mode: none
+          index: "media-buying-logs-%{+yyyy.MM.dd}"
+          # Lifecycle management
+          ilm.enabled: true
+          ilm.rollover_alias: "media-buying-logs"
+          ilm.pattern: "{now/d}-000001"
+          ilm.policy_name: "media-buying-logs-policy"
+
+        # Logging
+        logging.level: info
+        logging.to_files: true
+        logging.files:
+          path: /var/log/filebeat
+          name: filebeat
+          keepfiles: 7
+          permissions: 0644
+
+        # Monitoring
+        monitoring.enabled: true
+
+    # Filebeat resources
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    # Node tolerations to run on all nodes
+    tolerations:
+      - operator: Exists
+
+  # ILM Policy for log rotation
+  lifecycle:
+    postStart:
+      exec:
+        command:
+          - bash
+          - -c
+          - |
+            # Apply ILM policy via Elasticsearch API for automatic index management
+            # Hot phase: rollover after 30GB or 7 days
+            # Delete phase: remove after 30 days
+            curl -X PUT "https://elasticsearch-master:9200/_ilm/policy/media-buying-logs-policy" \
+              -H "Content-Type: application/json" \
+              -u "elastic:${ELASTIC_PASSWORD}" \
+              -k \
+              -d '{
+                "policy": {
+                  "phases": {
+                    "hot": {
+                      "actions": {
+                        "rollover": {
+                          "max_size": "30GB",
+                          "max_age": "7d"
+                        }
+                      }
+                    },
+                    "delete": {
+                      "min_age": "30d",
+                      "actions": {
+                        "delete": {}
+                      }
+                    }
+                  }
+                }
+              }' || true

@@ -1,0 +1,77 @@
+# ------------------------------------------------------------------------------
+# Staging Environment Values
+# ------------------------------------------------------------------------------
+
+global:
+  environment: staging
+
+replicaCount: 2
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+
+# Deployment strategy
+strategy:
+  type: Recreate
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/success-codes: "200"
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+  hosts:
+    - host: staging-dashboard.media-buying.autoresolve.com
+      paths:
+        - /
+  tls:
+    - secretName: media-buying-dashboard-tls
+      hosts:
+        - staging-dashboard.media-buying.autoresolve.com
+
+# JVM options
+env:
+  JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:+ExitOnOutOfMemoryError"
+  SPRING_PROFILES_ACTIVE: k8s
+  LOGGING_LEVEL_COM_AUTORESOLVE: DEBUG
+  LOGGING_LEVEL_ROOT: INFO
+  SERVER_PORT: "6800"
+  SERVER_ADDRESS: "0.0.0.0"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
+  MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED: "true"
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+nodeSelector:
+  node-type: dashboard
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+# Pod annotations
+podAnnotations:
+  backup.velero.io/backup-volumes: logs,tmp
+  backup.velero.io/ttl: "168h"  # 7-day retention

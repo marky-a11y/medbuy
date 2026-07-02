@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:mediabuy="http://xmlns.jcp.org/jsf/composite/mediabuy">
+
+<ui:composition template="/WEB-INF/templates/template.xhtml">
+    <ui:define name="content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h2 class="font-display-lg" style="margin: 0;">Dashboard</h2>
+                <p class="font-body-lg" style="color: var(--on-surface-variant); margin: var(--spacing-xs) 0 0 0;">
+                    Real-time performance analytics across global ad networks.
+                </p>
+            </div>
+            <div style="display: flex; gap: var(--spacing-sm);">
+                <button class="btn btn-outline btn-sm" onclick="return false;">
+                    <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">calendar_today</span>
+                    Last 7 Days
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="return false;">
+                    <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">add</span>
+                    New Campaign
+                </button>
+            </div>
+        </div>
+
+        <!-- Bento Grid Layout -->
+        <div class="bento-grid">
+
+            <!-- ================================================================
+                 TOP OPPORTUNITY CARD (col-span-8)
+                 ================================================================ -->
+            <div class="col-span-12 lg:col-span-8 card card-opportunity"
+                 rendered="#{dashboardBean.topOpportunity != null}">
+                <div class="card-content">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--spacing-lg);">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                            <!-- Platform Icon -->
+                            <div class="bg-tertiary-container"
+                                 style="width: 3rem; height: 3rem; border-radius: var(--radius-full);
+                                        display: flex; align-items: center; justify-content: center;
+                                        color: var(--on-tertiary-container);">
+                                <span class="material-symbols-outlined fill">rocket_launch</span>
+                            </div>
+                            <div>
+                                <!-- Qualitative Badge -->
+                                <span class="kpi-badge #{dashboardBean.badgeCssClass}">
+                                    #{dashboardBean.topOpportunity.qualitativeBadge}
+                                </span>
+                                <h3 class="font-headline-md" style="margin: var(--spacing-xs) 0 0 0;">
+                                    Top Pick: #{dashboardBean.topOpportunity.platformName}
+                                    <span style="color: var(--on-surface-variant);">
+                                        - #{dashboardBean.topOpportunity.sectorName} Sector
+                                    </span>
+                                    <!-- Recommendation Info Link -->
+                                    <p:commandLink actionListener="#{recommendationInfoBean.clearCompanySelection()}"
+                                                   update=":recommendationDialog"
+                                                   oncomplete="PF('recommendationDialog').show()"
+                                                   title="View data source info and KPIs for this recommendation"
+                                                   style="margin-left: var(--spacing-sm); vertical-align: middle;">
+                                        <span class="material-symbols-outlined" style="font-size: 1.25rem; color: var(--primary);">info</span>
+                                    </p:commandLink>
+                                    <h:outputLink value="/calculator?platformId=#{dashboardBean.topOpportunity.platformId}&amp;sectorId=#{dashboardBean.topOpportunity.sectorId}"
+                                                  style="margin-left: var(--spacing-sm); font-size: var(--font-size-sm); color: var(--primary); text-decoration: underline; white-space: nowrap;">
+                                        Calculate ROI
+                                    </h:outputLink>
+                                </h3>
+                            </div>
+                        </div>
+                        <!-- Composite Score -->
+                        <div style="text-align: right;">
+                            <span class="score-display">
+                                <h:outputText value="#{dashboardBean.topOpportunity.compositeScore}">
+                                    <f:convertNumber maxFractionDigits="1"/>
+                                </h:outputText>
+                                <span class="score-suffix">/100</span>
+                            </span>
+                            <p class="score-label">Optimization Score</p>
+                        </div>
+                    </div>
+
+                    <!-- Opportunity KPI Sub-Cards (3-column grid) -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-lg);">
+                        <!-- Market Demand -->
+                        <div class="kpi-sub-card">
+                            <p class="kpi-label">Market Demand</p>
+                            <p class="kpi-value" style="color: #{recommendationInfoBean.topOpportunityMetric != null and recommendationInfoBean.topOpportunityMetric.marketDemandScore ge 70 ? 'var(--success-green)' : (recommendationInfoBean.topOpportunityMetric != null and recommendationInfoBean.topOpportunityMetric.marketDemandScore ge 40 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                <h:outputText value="#{recommendationInfoBean.topOpportunityMetric.marketDemandScore}"
+                                              rendered="#{recommendationInfoBean.topOpportunityMetric != null}">
+                                    <f:convertNumber maxFractionDigits="0"/>
+                                </h:outputText>
+                                <span rendered="#{recommendationInfoBean.topOpportunityMetric == null}">—</span>
+                            </p>
+                            <div class="kpi-trend kpi-trend-up">
+                                <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">trending_up</span>
+                                Search + Directory
+                            </div>
+                        </div>
+                        <!-- Competition -->
+                        <div class="kpi-sub-card">
+                            <p class="kpi-label">Competition</p>
+                            <p class="kpi-value" style="color: #{recommendationInfoBean.topOpportunityMetric != null and recommendationInfoBean.topOpportunityMetric.advertisingCompetitionScore le 30 ? 'var(--success-green)' : (recommendationInfoBean.topOpportunityMetric != null and recommendationInfoBean.topOpportunityMetric.advertisingCompetitionScore le 60 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                <h:outputText value="#{recommendationInfoBean.topOpportunityMetric.advertisingCompetitionScore}"
+                                              rendered="#{recommendationInfoBean.topOpportunityMetric != null}">
+                                    <f:convertNumber maxFractionDigits="0"/>
+                                </h:outputText>
+                                <span rendered="#{recommendationInfoBean.topOpportunityMetric == null}">—</span>
+                            </p>
+                            <div class="kpi-trend kpi-trend-up">
+                                <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">trending_down</span>
+                                Ad Volume
+                            </div>
+                        </div>
+                        <!-- Est. CPC -->
+                        <div class="kpi-sub-card">
+                            <p class="kpi-label">Est. CPC</p>
+                            <p class="kpi-value" style="color: #{recommendationInfoBean.topOpportunityMetric != null and recommendationInfoBean.topOpportunityMetric.averageEstimatedCpc le 2.0 ? 'var(--success-green)' : (recommendationInfoBean.topOpportunityMetric != null and recommendationInfoBean.topOpportunityMetric.averageEstimatedCpc le 4.0 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                $<h:outputText value="#{recommendationInfoBean.topOpportunityMetric.averageEstimatedCpc}"
+                                               rendered="#{recommendationInfoBean.topOpportunityMetric != null}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>
+                                <span rendered="#{recommendationInfoBean.topOpportunityMetric == null}">—</span>
+                            </p>
+                            <div class="kpi-trend kpi-trend-flat">
+                                <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">trending_flat</span>
+                                Estimated
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Client Prospects Table -->
+                    <ui:fragment rendered="#{not empty dashboardBean.topOpportunity.topClients}">
+                        <div class="client-prospects-section">
+                            <h4 style="margin: 0 0 var(--spacing-md) 0; font-size: var(--font-size-sm); font-weight: 600; display: flex; align-items: center; gap: var(--spacing-xs);">
+                                <span class="material-symbols-outlined" style="font-size: 1.25rem;">group</span>
+                                Top Client Prospects &#8212; #{dashboardBean.topOpportunity.sectorName} Sector
+                            </h4>
+                            <table class="client-prospects-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 31%;">Company</th>
+                                        <th class="text-right" style="width: 10%;">Est. Revenue</th>
+                                        <th class="text-right" style="width: 10%;">YoY Growth</th>
+                                        <th class="text-right" style="width: 10%;">Est. Ad Budget</th>
+                                        <th class="text-right" style="width: 10%;">Yelp ★</th>
+                                        <th class="text-right" style="width: 11%;">Website Quality</th>
+                                        <th class="text-right" style="width: 11%;">Competitor Density</th>
+                                        <th style="width: 7%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <ui:repeat value="#{dashboardBean.topOpportunity.topClients}" var="client">
+                                        <tr>
+                                            <td>
+                                                <span class="client-name">#{client.companyName}</span>
+                                                <span class="client-vertical">#{client.industryVertical}</span>
+                                            </td>
+                                            <td class="text-right">#{client.estAnnualRevenueFormatted}</td>
+                                            <td class="text-right">
+                                                <span class="growth-indicator growth-#{client.growthDirection}">
+                                                    <span class="material-symbols-outlined" style="font-size: var(--font-size-sm); vertical-align: middle;">
+                                                        <ui:fragment rendered="#{client.growthDirection == 'up'}">trending_up</ui:fragment>
+                                                        <ui:fragment rendered="#{client.growthDirection == 'down'}">trending_down</ui:fragment>
+                                                        <ui:fragment rendered="#{client.growthDirection == 'flat'}">trending_flat</ui:fragment>
+                                                    </span>
+                                                    #{client.yoyGrowthFormatted}
+                                                </span>
+                                            </td>
+                                            <td class="text-right" style="font-weight: 600;">#{client.estAdBudgetFormatted}</td>
+                                            <td class="text-right" style="font-size: 12px; font-weight: 600; color: #{client.avgYelpRating ge 4.0 ? 'var(--success-green)' : (client.avgYelpRating ge 3.0 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                                <h:outputText value="#{client.avgYelpRating}" rendered="#{client.avgYelpRating != null}">
+                                                    <f:convertNumber maxFractionDigits="1" minFractionDigits="1"/>
+                                                </h:outputText>
+                                                <span rendered="#{client.avgYelpRating == null}">—</span>
+                                            </td>
+                                            <td class="text-right" style="font-size: 12px; font-weight: 600; color: #{client.websiteQualityScore ge 80 ? 'var(--success-green)' : (client.websiteQualityScore ge 50 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                                <h:outputText value="#{client.websiteQualityScore}" rendered="#{client.websiteQualityScore != null}"/>
+                                                <span rendered="#{client.websiteQualityScore == null}">—</span>
+                                            </td>
+                                            <td class="text-right" style="font-size: 12px; font-weight: 600; color: #{client.competitorDensity le 40 ? 'var(--success-green)' : (client.competitorDensity le 70 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                                <h:outputText value="#{client.competitorDensity}" rendered="#{client.competitorDensity != null}"/>
+                                                <span rendered="#{client.competitorDensity == null}">—</span>
+                                            </td>
+                                            <td class="text-right" style="width: 36px;">
+                                                <p:commandLink actionListener="#{recommendationInfoBean.selectCompanyByName(client.companyName, client.industryVertical)}"
+                                                               update=":recommendationDialog"
+                                                               oncomplete="PF('recommendationDialog').show()"
+                                                               title="View recommendation details for this company">
+                                                    <span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--primary); vertical-align: middle;">info</span>
+                                                </p:commandLink>
+                                            </td>
+                                        </tr>
+                                    </ui:repeat>
+                                </tbody>
+                            </table>
+                        </div>
+                    </ui:fragment>
+
+                    <!-- Action Bar -->
+                    <div class="action-bar">
+                        <p>Suggested Action: Increase daily budget by 15% for optimal ROI.</p>
+                        <h:commandLink styleClass="implement-btn"
+                                       action="#{dashboardBean.navigateToOpportunity()}">
+                            Implement Now
+                            <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">arrow_forward</span>
+                        </h:commandLink>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================
+                 ROI TRENDLINE CARD (col-span-4)
+                 ================================================================ -->
+            <div class="col-span-12 lg:col-span-4 card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+                    <h3 class="font-title-lg" style="margin: 0;">ROI Trendline</h3>
+                    <span class="material-symbols-outlined" style="color: var(--text-secondary);">show_chart</span>
+                </div>
+                <!-- Simple Bar Chart (7 bars placeholder) -->
+                <div class="roi-trend-chart">
+                    <div class="bar bar-primary-fixed-dim" style="height: 40%;"></div>
+                    <div class="bar bar-primary-fixed-dim" style="height: 60%;"></div>
+                    <div class="bar bar-primary-fixed-dim" style="height: 55%;"></div>
+                    <div class="bar bar-primary-fixed-dim" style="height: 80%;"></div>
+                    <div class="bar bar-primary-fixed-dim" style="height: 95%;"></div>
+                    <div class="bar bar-primary" style="height: 75%;"></div>
+                    <div class="bar bar-primary" style="height: 85%;"></div>
+                </div>
+                <div style="margin-top: var(--spacing-lg); display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                    <div>
+                        <p class="text-label-md" style="color: var(--text-secondary); margin: 0;">Avg. ROAS</p>
+                        <p class="font-headline-sm" style="margin: var(--spacing-xs) 0 0 0;">4.2x</p>
+                    </div>
+                    <div>
+                        <p class="text-label-md" style="color: var(--text-secondary); margin: 0;">Total Profit</p>
+                        <p class="font-headline-sm" style="margin: var(--spacing-xs) 0 0 0; color: var(--success-green);">+$12,402</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================
+                 GLOBAL PERFORMANCE BREAKDOWN (col-span-12)
+                 Hierarchical: Platform (L1) → Sectors (L2) → Metrics Table (L3)
+                 ================================================================ -->
+            <div class="col-span-12 data-table-wrapper">
+                <!-- Table Header -->
+                <div class="data-table-header">
+                    <h3 class="font-title-lg">Global Performance Breakdown</h3>
+                    <div style="display: flex; gap: var(--spacing-xs);">
+                        <h:commandLink styleClass="btn-icon" action="#{exportBean.downloadCsv()}" title="Download CSV">
+                            <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">download</span>
+                        </h:commandLink>
+                        <button class="btn-icon" title="More options">
+                            <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">more_vert</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Platform List (Level 1) -->
+                <ui:repeat value="#{dashboardBean.platforms}" var="platform" varStatus="loop">
+                    <div class="platform-panel">
+                        <!-- Platform Header (Expandable) -->
+                        <div class="platform-panel-header"
+                             onclick="expandPlatform(#{platform.id}, 'sectorList_#{platform.id}')"
+                             style="cursor: pointer;">
+                            <div class="platform-info">
+                                <span class="material-symbols-outlined" id="icon_#{platform.id}" style="color: var(--primary);">add_circle</span>
+                                <span>#{platform.displayName}</span>
+                            </div>
+                            <span style="color: var(--text-secondary); font-size: var(--font-size-xs);">Click to expand</span>
+                        </div>
+
+                        <!-- Sector List (Level 2 - hidden until expand) -->
+                        <div class="platform-panel-body" id="sectorList_#{platform.id}" style="display: none;">
+                            <!-- Macro Level Analysis: KPI metrics and overall score for this platform -->
+                            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--spacing-sm); margin-bottom: var(--spacing-md); padding: var(--spacing-md); background-color: var(--surface-container); border-radius: var(--radius-md);">
+                                <div style="text-align: center;">
+                                    <div style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">ROAS</div>
+                                    <div style="font-size: var(--font-size-lg); font-weight: 700; color: var(--success-green);">4.2x</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">CAC</div>
+                                    <div style="font-size: var(--font-size-lg); font-weight: 700; color: var(--danger-red);">$38</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">LTV</div>
+                                    <div style="font-size: var(--font-size-lg); font-weight: 700; color: var(--primary);">$520</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">LTV:CAC</div>
+                                    <div style="font-size: var(--font-size-lg); font-weight: 700; color: var(--success-green);">13.7x</div>
+                                </div>
+                                <div style="text-align: center; border-left: 1px solid var(--outline-variant); padding-left: var(--spacing-md);">
+                                    <div style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Overall</div>
+                                    <div style="font-size: var(--font-size-lg); font-weight: 700; color: var(--success-green);">82<span style="font-size: var(--font-size-sm); color: var(--text-secondary); font-weight: 500;">/100</span></div>
+                                </div>
+                            </div>
+
+                            <!-- If sector filter active, skip L2 and show metrics directly -->
+                            <ui:fragment rendered="#{dashboardBean.sectorFiltered}">
+                                <p:commandLink styleClass="sector-row selected"
+                                               actionListener="#{dashboardBean.selectSector(platform.id, dashboardBean.sectorFilterId)}"
+                                               update="metricsPanel">
+                                    <span style="color: var(--text-secondary); font-style: italic;">
+                                        View metrics for filtered sector
+                                    </span>
+                                </p:commandLink>
+                            </ui:fragment>
+
+                            <!-- Normal sector list when no global filter -->
+                            <ui:fragment rendered="#{!dashboardBean.sectorFiltered}">
+                                <div id="sectors_#{platform.id}">
+                                    <!-- Sectors loaded via AJAX on expand -->
+                                    <ui:fragment rendered="#{dashboardBean.expandedSectors != null and platform.id == dashboardBean.selectedPlatformId}">
+                                        <ui:repeat value="#{dashboardBean.expandedSectors}" var="sector">
+                                            <p:commandLink styleClass="sector-row #{sector.id == dashboardBean.selectedSectorId ? 'selected' : ''}"
+                                                           actionListener="#{dashboardBean.selectSector(platform.id, sector.id)}"
+                                                           update="metricsPanel"
+                                                           process="@this">
+                                                <span style="color: var(--text-secondary); font-style: italic;">
+                                                    └─ #{sector.displayName}
+                                                </span>
+                                            </p:commandLink>
+                                        </ui:repeat>
+                                    </ui:fragment>
+                                    <ui:fragment rendered="#{dashboardBean.expandedSectors == null or platform.id != dashboardBean.selectedPlatformId}">
+                                        <p style="color: var(--text-muted); font-size: var(--font-size-sm); padding: var(--spacing-sm);">
+                                            Click platform header to load sectors...
+                                        </p>
+                                    </ui:fragment>
+                                </div>
+                            </ui:fragment>
+                        </div>
+                    </div>
+                </ui:repeat>
+
+                <!-- No Platforms Message -->
+                <ui:fragment rendered="#{empty dashboardBean.platforms}">
+                    <div style="text-align: center; padding: var(--spacing-2xl);">
+                        <p style="color: var(--text-secondary);">No platforms found. Data may still be loading.</p>
+                    </div>
+                </ui:fragment>
+
+                <!-- Metrics Data Table (Level 3) -->
+                <p:panel id="metricsPanel" rendered="#{dashboardBean.metricsTableVisible}">
+                    <p:dataTable var="kpi"
+                                 value="#{dashboardBean.metricsModel}"
+                                 lazy="true"
+                                 paginator="true"
+                                 rows="20"
+                                 rowsPerPageTemplate="10,20,50"
+                                 paginatorPosition="bottom"
+                                 styleClass="data-table"
+                                 emptyMessage="No KPI data found for this platform and sector."
+                                 sortMode="single">
+                        <!-- 13 KPI Columns -->
+                        <p:column headerText="ROAS" sortBy="roas">
+                            <f:facet name="header">
+                                <p:tooltip for="col_roas" value="#{kpiTooltipBean.getTooltip('roas')}" escape="false"/>
+                                <h:outputText id="col_roas" value="ROAS"/>
+                            </f:facet>
+                            <!-- KPI masking check -->
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                <h:outputText value="#{kpi.roas}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <!-- Staleness icon -->
+                            <h:graphicImage rendered="#{kpi.dataStale}" value="#{null}"
+                                            styleClass="staleness-icon"/>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="CAC" sortBy="cac">
+                            <f:facet name="header">
+                                <p:tooltip for="col_cac" value="#{kpiTooltipBean.getTooltip('cac')}" escape="false"/>
+                                <h:outputText id="col_cac" value="CAC"/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                $<h:outputText value="#{kpi.cac}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="CLTV" sortBy="cltv">
+                            <f:facet name="header">
+                                <p:tooltip for="col_cltv" value="#{kpiTooltipBean.getTooltip('cltv')}" escape="false"/>
+                                <h:outputText id="col_cltv" value="CLTV"/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                $<h:outputText value="#{kpi.cltv}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="Conv. Rate" sortBy="conversionRate">
+                            <f:facet name="header">
+                                <p:tooltip for="col_cr" value="#{kpiTooltipBean.getTooltip('conversionRate')}" escape="false"/>
+                                <h:outputText id="col_cr" value="CR"/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                <h:outputText value="#{kpi.conversionRate}">
+                                    <f:convertNumber maxFractionDigits="4" minFractionDigits="4"/>
+                                </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="Contrib. Margin" sortBy="contributionMargin">
+                            <f:facet name="header">
+                                <p:tooltip for="col_cm" value="#{kpiTooltipBean.getTooltip('contributionMargin')}" escape="false"/>
+                                <h:outputText id="col_cm" value="Contrib. Margin"/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                $<h:outputText value="#{kpi.contributionMargin}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="Payback Period" sortBy="paybackPeriod">
+                            <f:facet name="header">
+                                <p:tooltip for="col_pp" value="#{kpiTooltipBean.getTooltip('paybackPeriod')}" escape="false"/>
+                                <h:outputText id="col_pp" value="Payback (mo)"/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                <h:outputText value="#{kpi.paybackPeriod}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="Incremental Return" sortBy="incrementalReturn">
+                            <f:facet name="header">
+                                <p:tooltip for="col_ir" value="#{kpiTooltipBean.getTooltip('incrementalReturn')}" escape="false"/>
+                                <h:outputText id="col_ir" value="Increm. Return"/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                <h:outputText value="#{kpi.incrementalReturn}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>%
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="CPQL" sortBy="costPerQualifiedLead">
+                            <f:facet name="header">
+                                <p:tooltip for="col_cpql" value="#{kpiTooltipBean.getTooltip('costPerQualifiedLead')}" escape="false"/>
+                                <h:outputText id="col_cpql" value="CPQL"/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                $<h:outputText value="#{kpi.costPerQualifiedLead}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="Scalability ($)" sortBy="scalability">
+                            <f:facet name="header">
+                                <p:tooltip for="col_sc" value="#{kpiTooltipBean.getTooltip('scalability')}" escape="false"/>
+                                <h:outputText id="col_sc" value="Scalability"/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                $<h:outputText value="#{kpi.scalability}">
+                                    <f:convertNumber maxFractionDigits="0"/>
+                                </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="Cash Conv. Cycle" sortBy="cashConversionCycle">
+                            <f:facet name="header">
+                                <p:tooltip for="col_ccc" value="#{kpiTooltipBean.getTooltip('cashConversionCycle')}" escape="false"/>
+                                <h:outputText id="col_ccc" value="Cash Cycle"/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                <h:outputText value="#{kpi.cashConversionCycle}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="Saturation Point" sortBy="saturationPoint">
+                            <f:facet name="header">
+                                <p:tooltip for="col_sp" value="#{kpiTooltipBean.getTooltip('saturationPoint')}" escape="false"/>
+                                <h:outputText id="col_sp" value="Saturation"/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                <h:outputText value="#{kpi.saturationPoint}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>%
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="Attr. Accuracy" sortBy="attributionAccuracy">
+                            <f:facet name="header">
+                                <p:tooltip for="col_aa" value="#{kpiTooltipBean.getTooltip('attributionAccuracy')}" escape="false"/>
+                                <h:outputText id="col_aa" value="Attr. Acc."/>
+                            </f:facet>
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                <h:outputText value="#{kpi.attributionAccuracy}">
+                                    <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                </h:outputText>%
+                            </ui:fragment>
+                            <ui:fragment rendered="#{!rbacBean.canViewFullKpis}">
+                                <h:outputText value="---" styleClass="kpi-masked"/>
+                            </ui:fragment>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <p:column headerText="Data Timestamp" sortBy="ingestionTimestamp">
+                            <f:facet name="header">
+                                <h:outputText value="Data TS"/>
+                            </f:facet>
+                            <h:outputText value="#{kpi.ingestionTimestamp}">
+                                <f:convertDateTime pattern="yyyy-MM-dd HH:mm" timeZone="UTC"/>
+                            </h:outputText>
+                            <span class="material-symbols-outlined staleness-icon"
+                                  rendered="#{kpi.dataStale}"
+                                  title="Data older than 15 minutes">schedule</span>
+                        </p:column>
+
+                        <!-- ============================================================
+                             14th Column: Sources (Source Citation / FRONT-29)
+                             ============================================================ -->
+                        <p:column headerText="Sources" width="60">
+                            <p:commandLink actionListener="#{dashboardBean.loadKpiSources(kpi.id)}"
+                                           update=":citationDialog"
+                                           oncomplete="PF('citationDialog').show()"
+                                           rendered="#{rbacBean.canViewFullKpis}">
+                                <span class="material-symbols-outlined citation-icon
+                                     #{dashboardBean.isKpiSourceStale(kpi.id) ? 'citation-icon-stale' : ''}">
+                                    info
+                                </span>
+                            </p:commandLink>
+                            <h:outputText value="---" rendered="#{not rbacBean.canViewFullKpis}" />
+                        </p:column>
+                    </p:dataTable>
+                </p:panel>
+
+                <!-- Table Footer -->
+                <div class="data-table-footer">
+                    <p style="margin: 0;">
+                        Showing <h:outputText value="#{empty dashboardBean.platforms ? 0 : dashboardBean.platforms.size()}"/>
+                        of #{empty dashboardBean.platforms ? 0 : dashboardBean.platforms.size()} ad platforms
+                    </p>
+                </div>
+            </div>
+
+            <!-- ================================================================
+                 CLIENT PORTFOLIO GRID (col-span-12)
+                 ================================================================ -->
+            <div class="col-span-12 data-table-wrapper">
+                <div class="data-table-header">
+                    <h3 class="font-title-lg">Client Portfolio</h3>
+                    <span class="client-badge">#{clientGridBean.clientModel.rowCount} Active Clients</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <p:dataTable id="clientTable" value="#{clientGridBean.clientModel}" var="client"
+                                 lazy="true" paginator="true" rows="10" rowsPerPageTemplate="10,20,30"
+                                 paginatorPosition="bottom" sortMode="single"
+                                 styleClass="data-table">
+                        <p:column headerText="Client Name" sortBy="#{client.clientName}">
+                            #{client.clientName}
+                        </p:column>
+                        <p:column headerText="Sector" sortBy="#{client.sectorName}">
+                            #{client.sectorName}
+                        </p:column>
+                        <p:column headerText="Contract" sortBy="#{client.contractType}">
+                            <span class="contract-type-badge #{clientGridBean.getContractBadgeClass(client.contractType)}">
+                                #{client.contractDescription}
+                            </span>
+                        </p:column>
+                        <p:column headerText="Retention" sortBy="#{client.retentionPeriodMonths}">
+                            <h:outputText value="#{client.retentionDisplay}"
+                                styleClass="#{clientGridBean.isExpiringSoon(client) ? 'retention-expiring-soon' : ''}" />
+                        </p:column>
+                        <p:column headerText="Outlook Score" sortBy="#{client.outlookScore}">
+                            <ui:fragment rendered="#{rbacBean.canViewFullKpis}">
+                                <span class="outlook-score #{clientGridBean.getOutlookCssClass(client.outlookScore)}">
+                                    #{client.outlookScore}
+                                </span>
+                            </ui:fragment>
+                            <h:outputText value="---" rendered="#{not rbacBean.canViewFullKpis}"
+                                styleClass="kpi-masked" />
+                        </p:column>
+                    </p:dataTable>
+                </div>
+                <div class="data-table-footer">
+                    <p style="margin: 0;">
+                        Showing #{clientGridBean.clientModel.rowCount} active client records
+                    </p>
+                </div>
+            </div>
+
+            <!-- ================================================================
+                 AI-POWERED INSIGHTS PANEL (col-span-12)
+                 Immediately after Client Portfolio Grid, before Strategic Insights
+                 ================================================================ -->
+            <h:panelGroup layout="block" styleClass="col-span-12" id="insightsPanel">
+                <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding"
+                     style="padding: var(--card-padding); border: 1px solid var(--outline-variant); border-radius: var(--radius-xl); background: var(--surface-container-lowest);">
+                    <div class="flex justify-between items-center mb-4"
+                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+                        <h3 class="text-title-lg font-title-lg flex items-center gap-2"
+                            style="margin: 0; font-size: var(--title-lg); font-weight: 600; display: flex; align-items: center; gap: var(--spacing-sm);">
+                            <span class="material-symbols-outlined text-tertiary" style="color: var(--tertiary);">auto_awesome</span>
+                            AI-Powered Insights
+                        </h3>
+                        <span class="text-xs text-secondary bg-surface-container-high px-2 py-1 rounded"
+                              style="font-size: var(--font-size-xs); color: var(--text-secondary); background: var(--surface-container-high); padding: 4px 8px; border-radius: var(--radius-full);">powered by NVIDIA NIM</span>
+                    </div>
+                    <ui:fragment rendered="#{insightsBean.hasInsights()}">
+                        <div class="grid grid-cols-1 gap-4"
+                             style="display: grid; grid-template-columns: 1fr; gap: var(--spacing-md);">
+                            <ui:repeat value="#{insightsBean.insights}" var="insight">
+                                <div class="insight-card #{insightsBean.getInsightCssClass(insight)}"
+                                     style="padding: var(--spacing-md); border-left: 4px solid var(--border-color); border-radius: var(--radius-sm); margin-bottom: var(--spacing-sm); background: var(--bg-white); box-shadow: var(--shadow-sm);">
+                                    <div class="flex items-center gap-2 mb-1"
+                                         style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
+                                        <span class="insight-card-sector-tag"
+                                              style="font-size: var(--font-size-xs); font-weight: 600; color: var(--text-secondary); background: var(--bg-gray-100); padding: 2px 8px; border-radius: var(--radius-full);">#{insight.sectorName}</span>
+                                        <span class="insight-card-confidence"
+                                              style="font-size: var(--font-size-xs); font-weight: 600; color: var(--primary-blue); background: var(--primary-blue-light); padding: 2px 6px; border-radius: var(--radius-full);">
+                                            <h:outputText value="#{insight.confidenceScore}">
+                                                <f:convertNumber maxFractionDigits="2" minFractionDigits="2"/>
+                                            </h:outputText>
+                                        </span>
+                                    </div>
+                                    <h4 class="insight-card-headline"
+                                        style="font-size: var(--font-size-sm); font-weight: 600; margin: 4px 0; color: var(--text-primary);">#{insight.headline}</h4>
+                                    <p class="insight-card-detail"
+                                       style="font-size: var(--font-size-sm); color: var(--text-secondary); line-height: 1.5; margin: 0;">#{insight.detail}</p>
+                                </div>
+                            </ui:repeat>
+                        </div>
+                    </ui:fragment>
+                    <ui:fragment rendered="#{not insightsBean.hasInsights() and insightsBean.errorMessage != null}">
+                        <div class="insights-error"
+                             style="text-align: center; padding: var(--spacing-lg); color: var(--text-secondary);">
+                            <p style="margin: 0 0 var(--spacing-sm) 0;">#{insightsBean.errorMessage}</p>
+                            <p:commandLink actionListener="#{insightsBean.retry()}" update="insightsPanel"
+                                           styleClass="btn btn-outline btn-sm">Retry</p:commandLink>
+                        </div>
+                    </ui:fragment>
+                    <ui:fragment rendered="#{not insightsBean.hasInsights() and insightsBean.errorMessage == null}">
+                        <p class="text-secondary text-body-sm" style="color: var(--text-secondary); font-size: var(--font-size-sm); margin: 0;">No actionable insights for current data.</p>
+                    </ui:fragment>
+                </div>
+            </h:panelGroup>
+
+            <!-- ================================================================
+                 STRATEGIC INSIGHTS CARD (col-span-4)
+                 ================================================================ -->
+            <div class="col-span-12 md:col-span-6 lg:col-span-4 card">
+                <h3 class="font-title-lg" style="margin: 0 0 var(--spacing-md) 0; display: flex; align-items: center; gap: var(--spacing-sm);">
+                    <span class="material-symbols-outlined" style="color: var(--tertiary);">lightbulb</span>
+                    Strategic Insights
+                </h3>
+                <div>
+                    <div class="insight-item tertiary">
+                        <p class="insight-title">Audience Fatigue Alert</p>
+                        <p class="insight-description">
+                            Creative set 'V4-Dynamic' on TikTok Finance is showing 15% lower engagement. Consider rotation.
+                        </p>
+                    </div>
+                    <div class="insight-item secondary">
+                        <p class="insight-title">Peak Hours Detected</p>
+                        <p class="insight-description">
+                            Tech sector conversions peak between 8PM-11PM EST. Shift budget pacing to late evening.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================
+                 QUICK COMMAND CENTER (col-span-8)
+                 ================================================================ -->
+            <div class="col-span-12 md:col-span-6 lg:col-span-8 card">
+                <h3 class="font-title-lg" style="margin: 0 0 var(--spacing-lg) 0;">Quick Command Center</h3>
+                <div class="command-grid">
+                    <button class="command-btn" onclick="showGrowl('Upload CSV — coming soon'); return false;">
+                        <span class="material-symbols-outlined command-icon">backup</span>
+                        <span class="command-label">Upload CSV</span>
+                    </button>
+                    <button class="command-btn" onclick="showGrowl('Auto-Optimize — coming soon'); return false;">
+                        <span class="material-symbols-outlined command-icon">auto_awesome</span>
+                        <span class="command-label">Auto-Optimize</span>
+                    </button>
+                    <button class="command-btn" onclick="showGrowl('Send Report — coming soon'); return false;">
+                        <span class="material-symbols-outlined command-icon">mail</span>
+                        <span class="command-label">Send Report</span>
+                    </button>
+                    <button class="command-btn" onclick="showGrowl('Instant Audit — coming soon'); return false;">
+                        <span class="material-symbols-outlined command-icon">bolt</span>
+                        <span class="command-label">Instant Audit</span>
+                    </button>
+                </div>
+            </div>
+
+        </div><!-- /bento-grid -->
+
+        <!-- ================================================================
+             Source Citation Dialog (FRONT-29)
+             ================================================================ -->
+        <p:dialog id="citationDialog" widgetVar="citationDialog" dynamic="true"
+                  modal="true" width="500" header="Data Source Attribution"
+                  styleClass="citation-dialog">
+            <ui:fragment rendered="#{not empty dashboardBean.currentSources}">
+                <ul class="source-dialog-list">
+                    <ui:repeat value="#{dashboardBean.currentSources}" var="src">
+                        <li class="source-dialog-item #{src.stale ? 'source-stale' : ''}">
+                            <div class="source-item-header">
+                                <span class="source-item-name">#{src.sourceName}</span>
+                                <span class="source-badge">#{src.sourceType}</span>
+                            </div>
+                            <div class="source-item-field">
+                                <span class="source-field-label">Source URL</span>
+                                <a class="source-url-link" href="#{src.sourceUrl}" target="_blank"
+                                   title="#{src.sourceUrl}">
+                                    #{src.sourceUrl.length() > 60 ? src.sourceUrl.substring(0,60).concat('...') : src.sourceUrl}
+                                </a>
+                            </div>
+                            <div class="source-item-field">
+                                <span class="source-field-label">License</span> #{src.licenseType}
+                            </div>
+                            <div class="source-item-field">
+                                <span class="source-field-label">Last Verified</span>
+                                #{src.lastVerifiedAt != null ? src.lastVerifiedAt : 'Never verified'}
+                                <span class="source-stale-text" rendered="#{src.stale}">(stale)</span>
+                            </div>
+                            <div class="source-item-field">
+                                <span class="source-field-label">Attribution Context</span> #{src.attributionContext}
+                            </div>
+                        </li>
+                    </ui:repeat>
+                </ul>
+            </ui:fragment>
+            <ui:fragment rendered="#{empty dashboardBean.currentSources}">
+                <div class="source-empty-state">
+                    <p>No source information available for this KPI record.</p>
+                </div>
+            </ui:fragment>
+        </p:dialog>
+
+        <!-- ================================================================
+             Recommendation Info Dialog (LIVE/MOCK status, KPIs, data source links)
+             ================================================================ -->
+        <p:dialog id="recommendationDialog" widgetVar="recommendationDialog"
+                  modal="true" width="1100" height="700"
+                  header="Recommendation Details"
+                  closable="true" showHeader="true"
+                  styleClass="recommendation-dialog"
+                  contentStyle="background: #ffffff; padding: 24px;"
+                  closeTitle="Close">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+
+                <!-- Section 1: Contributing Data Sources -->
+                <div>
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;
+                               display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">sensors</span>
+                        Contributing Data Sources
+                    </h4>
+                    <ui:fragment rendered="#{dashboardBean.topOpportunity != null}">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                            <ui:repeat value="#{recommendationInfoBean.getContributingSources(dashboardBean.topOpportunity.platformId, dashboardBean.topOpportunity.sectorId)}" var="w">
+                                <div style="display: flex; align-items: center; justify-content: space-between;
+                                            padding: 4px 10px;
+                                            border: 1px solid #e0e0e0; border-radius: 6px;
+                                            background: #fafafa;">
+                                    <span style="font-size: 13px;">#{w.sourceName}</span>
+                                    <span style="padding: 1px 8px; border-radius: 10px;
+                                                 font-size: 10px; font-weight: 700; text-transform: uppercase;
+                                                 background: #{w.live ? '#198754' : '#6c757d'};
+                                                 color: white;">
+                                        #{w.live ? 'LIVE' : 'MOCK'}
+                                    </span>
+                                </div>
+                            </ui:repeat>
+                        </div>
+                    </ui:fragment>
+                    <ui:fragment rendered="#{dashboardBean.topOpportunity == null}">
+                        <p style="color: #666; font-size: 13px;">No recommendation data available.</p>
+                    </ui:fragment>
+                </div>
+
+                <!-- Section 2: Client-Level Insights (always shown; shows data when a company is selected) -->
+                <div>
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;
+                               display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">business_center</span>
+                        Opportunity Metrics for Clients
+                        <span style="font-size: 12px; font-weight: 400; color: #999; margin-left: 4px;" rendered="#{not empty recommendationInfoBean.selectedCompanyName}">— #{recommendationInfoBean.selectedCompanyName}</span>
+                    </h4>
+                    <ui:fragment rendered="#{recommendationInfoBean.selectedCompanyMetrics != null}">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #ccc;">
+                                    <th style="text-align: left; padding: 6px 8px; font-weight: 700;">Metric</th>
+                                    <th style="text-align: center; padding: 6px 8px; font-weight: 700;">Value</th>
+                                    <th style="text-align: left; padding: 6px 8px; font-weight: 700; color: #666;">Assessment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                    <!-- Average Yelp Rating -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Avg Yelp Rating</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px; color: #{recommendationInfoBean.selectedCompanyMetrics.avgYelpRating ge 4.0 ? 'var(--success-green)' : (recommendationInfoBean.selectedCompanyMetrics.avgYelpRating ge 3.0 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                            <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.avgYelpRating}">
+                                                <f:convertNumber maxFractionDigits="1" minFractionDigits="1"/>
+                                            </h:outputText> / 5.0
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.avgYelpRating ge 4.0}">Strong reputation</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.avgYelpRating ge 3.0 and recommendationInfoBean.selectedCompanyMetrics.avgYelpRating lt 4.0}">Average reputation</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.avgYelpRating lt 3.0}">Weak reputation — improvement needed</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Yelp Review Count -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Yelp Reviews</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px;">
+                                            <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.yelpReviewCount}"/>
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.yelpReviewCount ge 100}">High social proof</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.yelpReviewCount ge 30 and recommendationInfoBean.selectedCompanyMetrics.yelpReviewCount lt 100}">Moderate engagement</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.yelpReviewCount lt 30}">Low review volume</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Competitor Review Gap -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Competitor Review Gap</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px; color: #{recommendationInfoBean.selectedCompanyMetrics.competitorReviewGap ge 0 ? 'var(--success-green)' : 'var(--danger-red)'};">
+                                            <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.competitorReviewGap}"/>
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.competitorReviewGap ge 0}">Ahead of top competitor</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.competitorReviewGap lt 0}">Behind top competitor by <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.competitorReviewGap * -1}"/> reviews</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Business Completeness -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Business Completeness</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px; color: #{recommendationInfoBean.selectedCompanyMetrics.businessCompleteness ge 80 ? 'var(--success-green)' : (recommendationInfoBean.selectedCompanyMetrics.businessCompleteness ge 50 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                            <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.businessCompleteness}"/>%
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.businessCompleteness ge 80}">Fully optimized profile</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.businessCompleteness ge 50 and recommendationInfoBean.selectedCompanyMetrics.businessCompleteness lt 80}">Partial profile, room for improvement</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.businessCompleteness lt 50}">Sparse profile — needs attention</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Website Present -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Website Present</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px; color: #{recommendationInfoBean.selectedCompanyMetrics.websitePresent ? 'var(--success-green)' : 'var(--danger-red)'};">
+                                            #{recommendationInfoBean.selectedCompanyMetrics.websitePresent ? 'Yes' : 'No'}
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.websitePresent}">Has an online presence</span>
+                                            <span rendered="#{not recommendationInfoBean.selectedCompanyMetrics.websitePresent}">No website — critical gap</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Website Quality -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Website Quality (PageSpeed)</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px; color: #{recommendationInfoBean.selectedCompanyMetrics.websiteQualityScore ge 80 ? 'var(--success-green)' : (recommendationInfoBean.selectedCompanyMetrics.websiteQualityScore ge 50 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                            <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.websiteQualityScore}"/>/100
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.websiteQualityScore ge 80}">Good performance</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.websiteQualityScore ge 50 and recommendationInfoBean.selectedCompanyMetrics.websiteQualityScore lt 80}">Needs optimization</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.websiteQualityScore lt 50}">Poor performance — high bounce risk</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Responds to Reviews -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Responds to Reviews</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px; color: #{recommendationInfoBean.selectedCompanyMetrics.respondsToReviews ? 'var(--success-green)' : 'var(--warning-yellow)'};">
+                                            #{recommendationInfoBean.selectedCompanyMetrics.respondsToReviews ? 'Yes' : 'No'}
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.respondsToReviews}">Actively engages customers</span>
+                                            <span rendered="#{not recommendationInfoBean.selectedCompanyMetrics.respondsToReviews}">Not responding — missed engagement opportunity</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Years in Business -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Years in Business</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px;">
+                                            <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.yearsInBusiness}"/>
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.yearsInBusiness ge 10}">Established business</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.yearsInBusiness ge 3 and recommendationInfoBean.selectedCompanyMetrics.yearsInBusiness lt 10}">Growing business</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.yearsInBusiness lt 3}">New business — higher risk</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Competitor Density -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Competitor Density</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px; color: #{recommendationInfoBean.selectedCompanyMetrics.competitorDensity le 40 ? 'var(--success-green)' : (recommendationInfoBean.selectedCompanyMetrics.competitorDensity le 70 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                            <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.competitorDensity}"/>/100
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.competitorDensity le 40}">Low competition — good opportunity</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.competitorDensity gt 40 and recommendationInfoBean.selectedCompanyMetrics.competitorDensity le 70}">Moderate competition</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.competitorDensity gt 70}">Highly competitive market</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Local Search Demand -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Local Search Demand</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px; color: #{recommendationInfoBean.selectedCompanyMetrics.localSearchDemand ge 60 ? 'var(--success-green)' : (recommendationInfoBean.selectedCompanyMetrics.localSearchDemand ge 30 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                            <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.localSearchDemand}"/>/100
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.localSearchDemand ge 60}">High local search interest</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.localSearchDemand ge 30 and recommendationInfoBean.selectedCompanyMetrics.localSearchDemand lt 60}">Moderate search demand</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.localSearchDemand lt 30}">Low search demand</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Median Household Income -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Median Household Income</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px;">
+                                            <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.medianHouseholdIncome}">
+                                                <f:convertNumber type="currency" currencySymbol="$" maxFractionDigits="0"/>
+                                            </h:outputText>
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.medianHouseholdIncome ge 80000}">Affluent demographic</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.medianHouseholdIncome ge 50000 and recommendationInfoBean.selectedCompanyMetrics.medianHouseholdIncome lt 80000}">Middle-income demographic</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.medianHouseholdIncome lt 50000}">Lower-income demographic</span>
+                                        </td>
+                                    </tr>
+                                    <!-- Population Growth -->
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">Population Growth</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px; color: #{recommendationInfoBean.selectedCompanyMetrics.populationGrowth ge 2.0 ? 'var(--success-green)' : (recommendationInfoBean.selectedCompanyMetrics.populationGrowth ge 0.0 ? 'var(--warning-yellow)' : 'var(--danger-red)')};">
+                                            <h:outputText value="#{recommendationInfoBean.selectedCompanyMetrics.populationGrowth}">
+                                                <f:convertNumber maxFractionDigits="1" minFractionDigits="1"/>
+                                            </h:outputText>%
+                                        </td>
+                                        <td style="padding: 6px 8px; font-size: 11px; color: #666;">
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.populationGrowth ge 2.0}">Growing area — expanding market</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.populationGrowth ge 0.0 and recommendationInfoBean.selectedCompanyMetrics.populationGrowth lt 2.0}">Stable population</span>
+                                            <span rendered="#{recommendationInfoBean.selectedCompanyMetrics.populationGrowth lt 0.0}">Declining population — shrinking market</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </ui:fragment>
+                        <ui:fragment rendered="#{recommendationInfoBean.selectedCompanyMetrics == null}">
+                            <p style="color: #666; font-size: 13px;">Select a company from the Client Prospects table to view its detailed metrics.</p>
+                        </ui:fragment>
+                    </div>
+
+                <!-- Section 3: Opportunity Metrics Used -->
+                <div>
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;
+                               display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">analytics</span>
+                        Opportunity Metrics for This Recommendation
+                    </h4>
+                    <ui:fragment rendered="#{recommendationInfoBean.topOpportunityMetric != null}">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;" id="opportunityMetricsTable">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #ccc;">
+                                    <th style="text-align: left; padding: 6px 8px; font-weight: 700;">Metric</th>
+                                    <th style="text-align: center; padding: 6px 8px; font-weight: 700;">Value</th>
+                                    <th style="text-align: center; padding: 6px 8px; font-weight: 700; color: #b71c1c;">Low</th>
+                                    <th style="text-align: center; padding: 6px 8px; font-weight: 700; color: #1565c0;">Normal</th>
+                                    <th style="text-align: center; padding: 6px 8px; font-weight: 700; color: #2e7d32;">High</th>
+                                    <th style="text-align: center; padding: 6px 8px; font-weight: 700;">Data Source</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ui:repeat value="#{recommendationInfoBean.opportunityMetricKeys}" var="metricKey">
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">
+                                            #{recommendationInfoBean.getMetricDisplayName(metricKey)}
+                                        </td>
+                                        <td style="text-align: center; padding: 6px 8px; font-weight: 700; font-size: 13px;">
+                                            <h:outputText value="#{recommendationInfoBean.getMetricValue(metricKey)}"
+                                                          rendered="#{metricKey ne 'avgCpc' and metricKey ne 'searchGrowth'}">
+                                                <f:convertNumber maxFractionDigits="1"/>
+                                            </h:outputText>
+                                            <h:outputText value="#{recommendationInfoBean.getMetricValue(metricKey)}"
+                                                          rendered="#{metricKey eq 'avgCpc'}">
+                                                <f:convertNumber type="currency" currencySymbol="$" maxFractionDigits="2" minFractionDigits="2"/>
+                                            </h:outputText>
+                                            <span rendered="#{metricKey eq 'searchGrowth'}">
+                                                <h:outputText value="#{recommendationInfoBean.getMetricValue(metricKey)}">
+                                                    <f:convertNumber maxFractionDigits="1"/>
+                                                </h:outputText>%
+                                            </span>
+                                        </td>
+                                        <td style="text-align: center; padding: 6px 8px; color: #b71c1c; font-size: 12px;"
+                                            class="benchmark-low">#{recommendationInfoBean.getMetricBenchmarks(metricKey)[0]}</td>
+                                        <td style="text-align: center; padding: 6px 8px; color: #1565c0; font-size: 12px;"
+                                            class="benchmark-norm">#{recommendationInfoBean.getMetricBenchmarks(metricKey)[1]}</td>
+                                        <td style="text-align: center; padding: 6px 8px; color: #2e7d32; font-size: 12px;"
+                                            class="benchmark-high">#{recommendationInfoBean.getMetricBenchmarks(metricKey)[2]}</td>
+                                        <td style="text-align: center; padding: 6px 8px; font-size: 11px; font-weight: 700;">
+                                            <span style="padding: 2px 8px; border-radius: 10px; text-transform: uppercase;
+                                                         background: #{recommendationInfoBean.getMetricDataSourceStatus(metricKey) eq 'LIVE' ? '#198754' : (recommendationInfoBean.getMetricDataSourceStatus(metricKey) eq 'LIVE+MOCK' ? '#e65100' : '#6c757d')};
+                                                         color: white;">
+                                                #{recommendationInfoBean.getMetricDataSourceStatus(metricKey)}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </ui:repeat>
+                            </tbody>
+                        </table>
+                    </ui:fragment>
+                    <ui:fragment rendered="#{recommendationInfoBean.topOpportunityMetric == null}">
+                        <p style="color: #666; font-size: 13px;">No opportunity metrics available. Run a data ingestion cycle first.</p>
+                    </ui:fragment>
+                </div>
+
+                <!-- Section 4: Research Links Grid -->
+                <div>
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;
+                               display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">link</span>
+                        Research Data Sources
+                    </h4>
+                    <ui:fragment rendered="#{not empty recommendationInfoBean.researchLinks}">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #ccc;">
+                                    <th style="text-align: left; padding: 6px 8px; font-weight: 700; width: 22%;">Metric Input</th>
+                                    <th style="text-align: left; padding: 6px 8px; font-weight: 700; width: 38%;">Link Destination</th>
+                                    <th style="text-align: left; padding: 6px 8px; font-weight: 700; width: 40%;">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ui:repeat value="#{recommendationInfoBean.researchLinks}" var="link">
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px 8px; font-weight: 600; font-size: 12px;">#{link.metricInput}</td>
+                                        <td style="padding: 6px 8px;">
+                                            <a href="#{link.url}" target="_blank" rel="noopener"
+                                               style="color: #1565c0; text-decoration: underline; font-size: 12px;
+                                                      display: inline-flex; align-items: center; gap: 4px;">
+                                                <span class="material-symbols-outlined" style="font-size: 14px;">open_in_new</span>
+                                                Open
+                                            </a>
+                                        </td>
+                                        <td style="padding: 6px 8px; color: #666; font-size: 11px;">#{link.notes}</td>
+                                    </tr>
+                                </ui:repeat>
+                            </tbody>
+                        </table>
+                    </ui:fragment>
+                    <ui:fragment rendered="#{empty recommendationInfoBean.researchLinks}">
+                        <p style="color: #666; font-size: 13px;">No research links available for this recommendation.</p>
+                    </ui:fragment>
+                </div>
+
+            </div>
+        </p:dialog>
+    </ui:define>
+
+    <ui:define name="scripts">
+        <script src="/js/recommendation-dialog.js"></script>
+        <script>
+            /**
+             * Expands a platform panel to show its sectors.
+             * Called from onclick on platform header.
+             */
+            function expandPlatform(platformId, sectorListId) {
+                var sectorList = document.getElementById(sectorListId);
+                if (sectorList) {
+                    var isHidden = sectorList.style.display === 'none' || sectorList.style.display === '';
+                    sectorList.style.display = isHidden ? 'block' : 'none';
+
+                    // Toggle icon
+                    var icon = document.getElementById('icon_' + platformId);
+                    if (icon) {
+                        icon.textContent = isHidden ? 'remove_circle' : 'add_circle';
+                    }
+                }
+            }
+
+            /**
+             * Stub growl notification for command center buttons.
+             */
+            function showGrowl(message) {
+                if (typeof PF !== 'undefined' &amp;&amp; PF('growl')) {
+                    PF('growl').show([{severity: 'info', summary: message}]);
+                } else {
+                    alert(message);
+                }
+            }
+
+            // Auto-refresh poll (every 5 minutes)
+            setTimeout(function() {
+                window.location.reload();
+            }, 5 * 60 * 1000);
+        </script>
+    </ui:define>
+</ui:composition>
+</html>

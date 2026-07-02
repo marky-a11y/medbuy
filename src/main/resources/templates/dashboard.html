@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting to Dashboard...</title>
+    <meta http-equiv="refresh" content="0; url=/dashboard.xhtml">
+    <link rel="stylesheet" th:href="@{/css/dashboard-theme.css}">
+</head>
+<body>
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--surface);">
+        <div class="card" style="text-align: center;">
+            <h2>Media Buying Dashboard</h2>
+            <p>Loading the interactive dashboard...</p>
+            <a th:href="@{/dashboard.xhtml}" class="btn btn-primary">Launch Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,104 @@
+# ------------------------------------------------------------------------------
+# Production Environment Values
+# ------------------------------------------------------------------------------
+
+global:
+  environment: prod
+
+replicaCount: 3
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 12
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+resources:
+  requests:
+    cpu: 1000m
+    memory: 1Gi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+
+# Deployment strategy (rolling update for zero-downtime deployments)
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/success-codes: "200"
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "10"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    alb.ingress.kubernetes.io/wafv2-acl-arn: "arn:aws:wafv2:us-east-1:123456789012:regional/webacl/media-buying-prod/abc123def" # WAF ACL ARN for production
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:123456789012:certificate/abcdef12-3456-7890-abcd-ef1234567890" # ACM certificate ARN
+  hosts:
+    - host: dashboard.media-buying.autoresolve.com
+      paths:
+        -
+  tls:
+    - secretName: media-buying-dashboard-tls
+      hosts:
+        - dashboard.media-buying.autoresolve.com
+
+# JVM options (larger heap for production, HeapDumpOnOutOfMemoryError for diagnostics)
+env:
+  JAVA_OPTS: "-Xms1024m -Xmx2048m -XX:+UseG1GC -XX:+UseContainerSupport -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/mediabuying/heapdump.hprof -XX:+ExitOnOutOfMemoryError -XX:MaxGCPauseMillis=200"
+  SPRING_PROFILES_ACTIVE: k8s
+  LOGGING_LEVEL_COM_AUTORESOLVE: INFO
+  LOGGING_LEVEL_ROOT: WARN
+  SERVER_PORT: "6800"
+  SERVER_ADDRESS: "0.0.0.0"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
+  MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED: "true"
+
+# Canary deployment configuration
+canary:
+  enabled: true
+  weight: 10
+  steps:
+    - setWeight: 10
+      pause: { duration: 5m }
+    - setWeight: 50
+      pause: { duration: 10m }
+    - setWeight: 100
+      pause: { duration: 0 }
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: media-buying-dashboard
+
+nodeSelector:
+  node-type: dashboard
+
+serviceMonitor:
+  enabled: true
+  interval: 15s
+  scrapeTimeout: 10s
+
+# Pod annotations (30-day retention backup, daily at 2AM)
+podAnnotations:
+  backup.velero.io/backup-volumes: logs,tmp
+  backup.velero.io/ttl: "720h"  # 30-day retention
+  backup.velero.io/schedule: "0 2 * * *"  # Daily at 2AM

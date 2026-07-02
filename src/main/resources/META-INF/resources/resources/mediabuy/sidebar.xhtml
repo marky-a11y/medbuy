@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:cc="http://xmlns.jcp.org/jsf/composite"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+<cc:interface>
+    <cc:attribute name="activePage" type="java.lang.String" default="dashboard"/>
+</cc:interface>
+
+<cc:implementation>
+    <aside class="sidebar">
+        <!-- Brand -->
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon">
+                <span class="material-symbols-outlined fill">insights</span>
+            </div>
+            <div>
+                <h1 class="sidebar-brand-title">MedBuy</h1>
+                <p class="sidebar-brand-subtitle">Excellent Media Buying</p>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="sidebar-nav">
+            <a href="/dashboard.xhtml" class="sidebar-nav-item #{cc.attrs.activePage eq 'dashboard' ? 'sidebar-active' : ''}">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/calculator" class="sidebar-nav-item #{cc.attrs.activePage eq 'calculator' ? 'sidebar-active' : ''}">
+                <span class="material-symbols-outlined">calculate</span>
+                <span>ROI Calculator</span>
+            </a>
+            <a href="/pipeline-debug" class="sidebar-nav-item #{cc.attrs.activePage eq 'pipeline-debug' ? 'sidebar-active' : ''}">
+                <span class="material-symbols-outlined">monitoring</span>
+                <span>Pipeline Debug</span>
+            </a>
+            <a class="sidebar-nav-item" href="#">
+                <span class="material-symbols-outlined">confirmation_number</span>
+                <span>Ticket Management</span>
+            </a>
+            <a class="sidebar-nav-item" href="#">
+                <span class="material-symbols-outlined">admin_panel_settings</span>
+                <span>Admin Panel</span>
+            </a>
+            <a class="sidebar-nav-item" href="#">
+                <span class="material-symbols-outlined">settings</span>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <!-- Quick Stat -->
+        <div class="sidebar-quick-stat">
+            <p class="stat-label">Quick Stat</p>
+            <p class="stat-value">
+                <h:outputText value="#{dashboardBean.dailyAdSpend}">
+                    <f:convertNumber type="currency" currencySymbol="$" maxFractionDigits="1"/>
+                </h:outputText>
+            </p>
+            <p style="font-size: var(--font-size-xs); opacity: 0.8;">Daily Ad Spend</p>
+        </div>
+    </aside>
+</cc:implementation>
+</html>

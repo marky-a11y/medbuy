@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head th:fragment="head(title, activePage)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title}">MedBuy - Media Buying Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard-theme.css}"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"/>
+</head>
+<body class="bg-surface" layout:fragment="body">
+    <!-- Sidebar -->
+    <div th:replace="fragments/sidebar :: sidebar(${activePage})"></div>
+
+    <!-- Topbar -->
+    <div th:replace="fragments/topbar :: topbar"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div th:replace="${content}"></div>
+    </main>
+
+    <!-- Floating Action Button -->
+    <button class="fab-button" title="AI Assistant — coming soon" onclick="alert('AI Assistant — coming soon');">
+        <span class="material-symbols-outlined fill">smart_toy</span>
+    </button>
+</body>
+</html>

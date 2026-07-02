@@ -1,0 +1,118 @@
+# ------------------------------------------------------------------------------
+# Grafana Dashboard Configuration (deployed as a ConfigMap)
+# This is imported via Grafana's sidecar (if enabled in kube-prometheus-stack).
+# ------------------------------------------------------------------------------
+# To deploy:
+#   kubectl apply -n monitoring -f this-file.yaml
+#
+# For kube-prometheus-stack (Grafana), dashboards are auto-discovered from
+# ConfigMaps with label: grafana_dashboard: "1"
+#
+# The dashboard JSON below provides JVM, API latency, cache hit ratio,
+# and error rate panels.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: media-buying-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  media-buying-dashboard.json: |
+    {
+      "__inputs": [],
+      "__requires": [],
+      "annotations": { "list": [] },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "title": "Media Buying Dashboard - Application Metrics",
+      "uid": "media-buying-app",
+      "tags": ["media-buying", "spring-boot"],
+      "timezone": "browser",
+      "panels": [
+        {
+          "title": "JVM Memory",
+          "type": "graph",
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "expr": "sum(jvm_memory_used_bytes{area=\"heap\"})",
+              "legendFormat": "Heap Used"
+            },
+            {
+              "expr": "sum(jvm_memory_max_bytes{area=\"heap\"})",
+              "legendFormat": "Heap Max"
+            }
+          ],
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+        },
+        {
+          "title": "API Latency (p50/p95/p99)",
+          "type": "graph",
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
+              "legendFormat": "p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
+              "legendFormat": "p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
+              "legendFormat": "p99"
+            }
+          ],
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+        },
+        {
+          "title": "Cache Hit Ratio",
+          "type": "graph",
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "expr": "rate(redis_commands_duration_seconds_count{cmd=\"get\"}[5m]) > 0",
+              "legendFormat": "Cache Gets"
+            },
+            {
+              "expr": "rate(cache_hits_total[5m])",
+              "legendFormat": "Cache Hits"
+            }
+          ],
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+        },
+        {
+          "title": "HTTP Request Rate",
+          "type": "graph",
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "expr": "rate(http_server_requests_seconds_count[5m])",
+              "legendFormat": "Requests/sec"
+            }
+          ],
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 }
+        },
+        {
+          "title": "Error Rate",
+          "type": "graph",
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "expr": "rate(http_server_requests_seconds_count{status=~\"5..\"}[5m]) / rate(http_server_requests_seconds_count[5m])",
+              "legendFormat": "5XX Error Rate"
+            }
+          ],
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 }
+        }
+      ],
+      "schemaVersion": 27,
+      "version": 1,
+      "links": [],
+      "refresh": "30s"
+    }

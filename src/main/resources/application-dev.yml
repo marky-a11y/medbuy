@@ -1,0 +1,51 @@
+server:
+  port: 6800
+  address: 0.0.0.0
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:mediabuying;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  thymeleaf:
+    cache: false
+
+  # In-memory session (no external store needed)
+  session:
+    store-type: none
+
+# Disable integration ingestion in dev (no external APIs to call)
+integration:
+  ingestion:
+    enabled: false
+    interval-ms: 300000
+    timeout-seconds: 300
+  iheart-radio:
+    mock-enabled: true
+
+logging:
+  level:
+    com.autoresolve.mediabuying: DEBUG
+    com.autoresolve.mediabuying.integration: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.boot.autoconfigure: INFO

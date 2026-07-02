@@ -1,0 +1,7 @@
+# Spring Boot auto-configuration registrations
+# =============================================
+# PropertiesEnvPostProcessor loads properties.env into the Spring Environment,
+# allowing application.yml placeholders (${VAR}) to resolve from the .env file
+# instead of OS environment variables.
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.autoresolve.mediabuying.config.PropertiesEnvPostProcessor

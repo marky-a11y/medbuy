@@ -1,0 +1,269 @@
+{
+  "title": "Media Buying Dashboard - Application Metrics",
+  "uid": "media-buying-app",
+  "tags": ["media-buying", "spring-boot", "java", "micrometer"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 27,
+  "version": 2,
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 100,
+      "title": "JVM Overview",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "id": 1,
+      "title": "JVM Heap Memory",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(jvm_memory_used_bytes{area=\"heap\", namespace=\"media-buying\"}) by (pod)", "legendFormat": "Heap Used - {{pod}}" },
+        { "expr": "sum(jvm_memory_max_bytes{area=\"heap\", namespace=\"media-buying\"}) by (pod)", "legendFormat": "Heap Max - {{pod}}" },
+        { "expr": "sum(jvm_memory_committed_bytes{area=\"heap\", namespace=\"media-buying\"}) by (pod)", "legendFormat": "Heap Committed - {{pod}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineInterpolation": "smooth", "fillOpacity": 10 } } }
+    },
+    {
+      "id": 2,
+      "title": "GC Pause Time (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rate(jvm_gc_pause_seconds_sum{namespace=\"media-buying\"}[1m]) * 1000", "legendFormat": "{{action}} - {{cause}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "lineInterpolation": "stepBefore" } } }
+    },
+    {
+      "id": 3,
+      "title": "Thread Count",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 5, "x": 14, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "jvm_threads_live_threads{namespace=\"media-buying\"}", "legendFormat": "Live - {{pod}}" },
+        { "expr": "jvm_threads_daemon_threads{namespace=\"media-buying\"}", "legendFormat": "Daemon - {{pod}}" },
+        { "expr": "jvm_threads_peak_threads{namespace=\"media-buying\"}", "legendFormat": "Peak - {{pod}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineInterpolation": "smooth" } } }
+    },
+    {
+      "id": 4,
+      "title": "Class Loading",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 5, "x": 19, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "jvm_classes_loaded_classes{namespace=\"media-buying\"}", "legendFormat": "Loaded - {{pod}}" },
+        { "expr": "jvm_classes_unloaded_classes{namespace=\"media-buying\"}", "legendFormat": "Unloaded - {{pod}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineInterpolation": "smooth" } } }
+    },
+    {
+      "id": 200,
+      "title": "Application Performance",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "collapsed": false
+    },
+    {
+      "id": 5,
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count{uri!~\"/actuator.*\", namespace=\"media-buying\"}[1m])) by (uri)", "legendFormat": "{{uri}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineInterpolation": "smooth" } } }
+    },
+    {
+      "id": 6,
+      "title": "Error Rate (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\", namespace=\"media-buying\"}[1m])) by (uri) / sum(rate(http_server_requests_seconds_count{namespace=\"media-buying\"}[1m])) by (uri) * 100", "legendFormat": "{{uri}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "lineInterpolation": "stepBefore" }, "thresholds": { "steps": [{ "color": "green", "value": 0 }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1 }] } } }
+    },
+    {
+      "id": 7,
+      "title": "Latency p50 (seconds)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 4, "x": 12, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{uri!~\"/actuator.*\", namespace=\"media-buying\"}[5m])) by (le, uri))", "legendFormat": "{{uri}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineInterpolation": "smooth" }, "thresholds": { "steps": [{ "color": "green", "value": 0 }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1 }] } } }
+    },
+    {
+      "id": 8,
+      "title": "Latency p95/p99 (seconds)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 16, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri!~\"/actuator.*\", namespace=\"media-buying\"}[5m])) by (le, uri))", "legendFormat": "p95 - {{uri}}" },
+        { "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri!~\"/actuator.*\", namespace=\"media-buying\"}[5m])) by (le, uri))", "legendFormat": "p99 - {{uri}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineInterpolation": "smooth" }, "thresholds": { "steps": [{ "color": "green", "value": 0 }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 2 }] } } }
+    },
+    {
+      "id": 300,
+      "title": "Cache Performance",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "title": "Cache Hit Ratio (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(media_buying_cache_hit_total{namespace=\"media-buying\"}[5m])) / (sum(rate(media_buying_cache_hit_total{namespace=\"media-buying\"}[5m])) + sum(rate(media_buying_cache_miss_total{namespace=\"media-buying\"}[5m]))) * 100", "legendFormat": "Cache Hit %" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "custom": { "lineInterpolation": "smooth" }, "thresholds": { "steps": [{ "color": "red", "value": 0 }, { "color": "yellow", "value": 70 }, { "color": "green", "value": 85 }] } } }
+    },
+    {
+      "id": 10,
+      "title": "Cache Operations/sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rate(redis_commands_duration_seconds_count{namespace=\"media-buying\"}[1m])", "legendFormat": "{{cmd}}/s" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineInterpolation": "smooth" } } }
+    },
+    {
+      "id": 11,
+      "title": "Pool Thread Utilization",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "lettuce_redis_connection_pool_active_connections{namespace=\"media-buying\"}", "legendFormat": "Active - {{pod}}" },
+        { "expr": "lettuce_redis_connection_pool_idle_connections{namespace=\"media-buying\"}", "legendFormat": "Idle - {{pod}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineInterpolation": "smooth" } } }
+    },
+
+    {
+      "id": 500,
+      "title": "Database",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "collapsed": false
+    },
+    {
+      "id": 16,
+      "title": "Active Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 37 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "hikaricp_connections_active{namespace=\"media-buying\"}", "legendFormat": "Active - {{pool}}" },
+        { "expr": "hikaricp_connections_idle{namespace=\"media-buying\"}", "legendFormat": "Idle - {{pool}}" },
+        { "expr": "hikaricp_connections_pending{namespace=\"media-buying\"}", "legendFormat": "Pending - {{pool}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineInterpolation": "smooth" } } }
+    },
+    {
+      "id": 17,
+      "title": "Query Latency (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 37 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum(rate(hikaricp_connections_usage_seconds_bucket{namespace=\"media-buying\"}[5m])) by (le)) * 1000", "legendFormat": "p99 Latency" },
+        { "expr": "histogram_quantile(0.50, sum(rate(hikaricp_connections_usage_seconds_bucket{namespace=\"media-buying\"}[5m])) by (le)) * 1000", "legendFormat": "p50 Latency" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "lineInterpolation": "smooth" } } }
+    },
+    {
+      "id": 18,
+      "title": "Transaction Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 37 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rate(hikaricp_connections_creation_seconds_count{namespace=\"media-buying\"}[5m])", "legendFormat": "Connections created/s - {{pool}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineInterpolation": "smooth" } } }
+    },
+    {
+      "id": 600,
+      "title": "Integration & Dashboard Health",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 45 },
+      "collapsed": false
+    },
+    {
+      "id": 19,
+      "title": "API Success/Failure per Platform",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rate(media_buying_integration_success_total{namespace=\"media-buying\"}[15m])", "legendFormat": "{{class}} - success" },
+        { "expr": "rate(media_buying_integration_failure_total{namespace=\"media-buying\"}[15m])", "legendFormat": "{{class}} - failure" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "stacking": { "mode": "normal" } } } }
+    },
+    {
+      "id": 20,
+      "title": "KPI Refresh Age (minutes)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 46 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "(time() - media_buying_ingestion_timestamp_seconds{namespace=\"media-buying\"}) / 60" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "m", "thresholds": { "steps": [{ "color": "green", "value": 0 }, { "color": "yellow", "value": 15 }, { "color": "red", "value": 30 }] } } }
+    },
+    {
+      "id": 21,
+      "title": "Top Opportunity Score",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 46 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "media_buying_scoring_top_score{namespace=\"media-buying\"}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "none", "min": 0, "max": 100, "thresholds": { "steps": [{ "color": "red", "value": 0 }, { "color": "yellow", "value": 50 }, { "color": "green", "value": 80 }] } } }
+    },
+    {
+      "id": 22,
+      "title": "Pod Count & Restarts",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 46 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "count(kube_pod_info{namespace=\"media-buying\", created_by_kind=\"ReplicaSet\"})", "legendFormat": "Pods" },
+        { "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"media-buying\"}[30m]))", "legendFormat": "Restarts" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "color": "green", "value": 0 }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }] } } }
+    },
+    {
+      "id": 23,
+      "title": "OAuth Token Refresh Errors",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 50 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rate(media_buying_oauth_token_refresh_errors_total{namespace=\"media-buying\"}[15m])" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "thresholds": { "steps": [{ "color": "green", "value": 0 }, { "color": "red", "value": 0 }] } } }
+    }
+  ]
+}

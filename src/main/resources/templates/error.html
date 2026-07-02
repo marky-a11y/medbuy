@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - Media Buying Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard-theme.css}">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--bg-light);
+        }
+        .error-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: var(--spacing-2xl);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .error-code {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--danger-red);
+            margin-bottom: var(--spacing-md);
+        }
+        .error-message {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+        }
+        .correlation-id {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-xl);
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <div class="error-code" th:text="${status} ?: '500'">500</div>
+        <h2 th:text="${error} ?: 'Unexpected Error'">Something went wrong</h2>
+        <p class="error-message" th:text="${message} ?: 'An unexpected error occurred. Please try again.'">
+            An unexpected error occurred.
+        </p>
+        <p class="correlation-id" th:if="${correlationId}">
+            Reference: <span th:text="${correlationId}">correlation-id</span>
+        </p>
+        <div style="display: flex; gap: var(--spacing-md); justify-content: center;">
+            <a href="/dashboard.xhtml" class="btn btn-primary">Go to Dashboard</a>
+            <a href="javascript:history.back()" class="btn btn-outline">Go Back</a>
+        </div>
+    </div>
+</body>
+</html>

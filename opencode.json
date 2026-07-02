@@ -1,0 +1,168 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "playwright-test": {
+      "type": "local",
+      "command": [
+        "npx",
+        "playwright",
+        "run-test-mcp-server"
+      ],
+      "enabled": true
+    }
+  },
+  "tools": {
+    "playwright*": false
+  },
+	"provider": {
+    "crof": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "CrofAI",
+      "options": {
+        "baseURL": "https://crof.ai/v1",
+        "apiKey": "nahcrof_oWOUkHTqtOxCrbpAKuUN"
+      },
+      "models": {
+        "moonshotai/kimi-k2.6": {
+          "id": "kimi-k2.6",
+          "name": "Kimi K2.6",
+          "limit": { "context": 262144, "output": 262144 },
+          "family": "kimi",
+          "attachment": true,
+          "reasoning": true,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text", "image", "video"], "output": ["text"] },
+          "interleaved": { "field": "reasoning_details" }
+        },
+        "moonshotai/kimi-k2.5:lightning": {
+          "id": "kimi-k2.5-lightning",
+          "name": "Kimi K2.5 (lightning)",
+          "limit": { "context": 131072, "output": 32768 },
+          "family": "kimi",
+          "attachment": false,
+          "reasoning": false,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text"], "output": ["text"] }
+        },
+        "z-ai/glm-5.1": {
+          "id": "glm-5.1",
+          "name": "GLM-5.1",
+          "limit": { "context": 202752, "output": 202752 },
+          "family": "glm",
+          "attachment": false,
+          "reasoning": true,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text"], "output": ["text"] },
+          "interleaved": { "field": "reasoning_content" }
+        },
+        "z-ai/glm-5:lightning": {
+          "id": "glm-5-lightning",
+          "name": "GLM-5 (lightning)",
+          "limit": { "context": 202752, "output": 202752 },
+          "family": "glm",
+          "attachment": false,
+          "reasoning": false,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text"], "output": ["text"] }
+        },
+        "z-ai/glm-4.7": {
+          "id": "glm-4.7",
+          "name": "GLM-4.7",
+          "limit": { "context": 202752, "output": 202752 },
+          "family": "glm",
+          "attachment": false,
+          "reasoning": true,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text"], "output": ["text"] },
+          "interleaved": { "field": "reasoning_details" }
+        },
+        "z-ai/glm-4.7-flash": {
+          "id": "glm-4.7-flash",
+          "name": "GLM-4.7-Flash",
+          "limit": { "context": 202752, "output": 131072 },
+          "family": "glm",
+          "attachment": false,
+          "reasoning": true,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text"], "output": ["text"] },
+          "interleaved": { "field": "reasoning_details" }
+        },
+        "google/gemma-4-31b-it": {
+          "id": "gemma-4-31b-it",
+          "name": "Gemma 4 31B",
+          "limit": { "context": 262144, "output": 262144 },
+          "family": "gemma",
+          "attachment": true,
+          "reasoning": true,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text", "image", "video"], "output": ["text"] }
+        },
+        "minimax/minimax-m2.5": {
+          "id": "minimax-m2.5",
+          "name": "MiniMax M2.5",
+          "limit": { "context": 204800, "output": 131072 },
+          "family": "minimax",
+          "attachment": false,
+          "reasoning": true,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text"], "output": ["text"] },
+          "interleaved": { "field": "reasoning_details" }
+        },
+        "qwen/qwen3.5-397b-a17b": {
+          "id": "qwen3.5-397b-a17b",
+          "name": "Qwen3.5 397B A17B",
+          "limit": { "context": 262144, "output": 262144 },
+          "family": "qwen",
+          "attachment": true,
+          "reasoning": true,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text", "image", "video"], "output": ["text"] }
+        },
+        "deepseek/deepseek-v4-pro": {
+          "id": "deepseek-v4-pro",
+          "name": "DeepSeek V4 Pro",
+          "limit": { "context": 163840, "output": 163840 },
+          "family": "deepseek",
+          "attachment": false,
+          "reasoning": true,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text"], "output": ["text"] }
+        },
+		"xiaomi/mimo-v2.5-pro": {
+          "id": "mimo-v2.5-pro",
+          "name": "Mimo V2.5 Pro",
+          "limit": { "context": 1000000, "output": 131072 },
+          "family": "mimo",
+          "attachment": false,
+          "reasoning": true,
+          "tool_call": true,
+          "temperature": true,
+          "modalities": { "input": ["text", "image"], "output": ["text"] }
+        }
+      }
+    },
+		"ollama": 
+		{
+			"npm": "@ai-sdk/openai-compatible",
+			"name": "Ollama (local)",
+			"options": {
+			"baseURL": "http://192.168.50.148:11434/v1"
+			},
+			"models": {
+			"gemma4:e4b": {
+			  "name": "Gemma 4"
+			}
+			}
+		}
+	}
+}

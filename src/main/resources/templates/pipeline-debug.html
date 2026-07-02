@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="fragments/layout">
+
+<head>
+    <title th:text="'Pipeline Debug - MedBuy'">Pipeline Debug - MedBuy</title>
+    <th:block layout:fragment="head">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" th:href="@{/css/dashboard-theme.css}">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"/>
+    </th:block>
+</head>
+
+<body layout:fragment="body">
+    <main class="main-content">
+        <div th:replace="fragments/sidebar :: sidebar('pipeline-debug')"></div>
+        <div th:replace="fragments/topbar :: topbar"></div>
+
+        <div style="max-width: 1400px; margin: 0 auto;">
+            <div class="page-header">
+                <div>
+                    <h2 class="font-display-lg" style="margin: 0;">Pipeline Debug</h2>
+                    <p style="color: var(--on-surface-variant); margin: var(--spacing-xs) 0 0 0;">
+                        Diagnostic view of ingestion logs, computed KPI metrics, and extracted companies.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Section 0: Wrapper Status Grid -->
+            <div class="data-table-wrapper" style="margin-bottom: var(--spacing-xl);">
+                <div class="data-table-header">
+                    <h3 class="font-title-lg" style="margin: 0;">Data Source Status</h3>
+                    <span th:text="${#lists.size(wrapperStatuses)} + ' wrappers'">0 wrappers</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--spacing-sm); padding: var(--spacing-md);">
+                    <div th:each="w : ${wrapperStatuses}"
+                         style="display: flex; align-items: center; gap: var(--spacing-sm);
+                                padding: var(--spacing-sm) var(--spacing-md);
+                                border-radius: var(--radius-md);
+                                border: 1px solid var(--outline-variant);
+                                background: var(--surface-container-lowest);">
+                        <span th:text="${w.sourceName}" style="font-weight: 500; flex: 1;">Source</span>
+                        <span th:if="${w.live}"
+                              style="background: #198754; color: white; padding: 2px 8px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600;">LIVE</span>
+                        <span th:unless="${w.live}"
+                              style="background: #6c757d; color: white; padding: 2px 8px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600;">MOCK</span>
+                    </div>
+                </div>
+                <div class="data-table-footer">
+                    <span th:if="${#lists.size(wrapperStatuses)} > 0"
+                          th:text="${#lists.size(wrapperStatuses)} + ' source' + (${#lists.size(wrapperStatuses)} == 1 ? '' : 's') + ' — ' + ${#lists.size(wrapperStatuses)} + ' MOCK'">Summary</span>
+                </div>
+            </div>
+
+            <!-- Section 1: Raw Ingestion Logs -->
+            <div class="data-table-wrapper" style="margin-bottom: var(--spacing-xl);">
+                <div class="data-table-header">
+                    <h3 class="font-title-lg" style="margin: 0;">Raw Ingestion Logs</h3>
+                    <span class="text-label-md text-secondary" th:text="${#lists.size(recentLogs)} + ' entries'">0 entries</span>
+                </div>
+
+                <table class="data-table" th:if="${recentLogs != null and !recentLogs.isEmpty()}">
+                    <thead>
+                        <tr>
+                            <th>Source</th>
+                            <th>Status</th>
+                            <th>Type</th>
+                            <th>Records</th>
+                            <th>Summary</th>
+                            <th>Error</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="log : ${recentLogs}">
+                            <td th:text="${log.sourceName}">Source Name</td>
+                            <td>
+                                <span th:text="${log.fetchStatus}"
+                                      th:style="${log.fetchStatus == 'SUCCESS'} ? 'color: var(--success-green); font-weight: 600;' : (${log.fetchStatus == 'MOCK'} ? 'color: var(--primary); font-weight: 600;' : 'color: var(--error); font-weight: 600;')">
+                                    STATUS
+                                </span>
+                            </td>
+                            <td th:text="${log.sourceType}">Type</td>
+                            <td th:text="${log.recordCount}">0</td>
+                            <td th:text="${log.normalizedSummary}" style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Summary</td>
+                            <td th:text="${log.errorMessage}" style="color: var(--error); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">—</td>
+                            <td th:text="${log.ingestionTimestamp}">2024-01-01 00:00:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div th:if="${recentLogs == null or recentLogs.isEmpty()}"
+                     style="padding: var(--spacing-2xl); text-align: center; color: var(--text-muted);">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; margin-bottom: var(--spacing-md); display: block;">receipt_long</span>
+                    <p style="margin: 0; font-weight: 500;">No ingestion logs available</p>
+                    <p style="margin: var(--spacing-xs) 0 0 0; font-size: var(--font-size-sm);">Run a data ingestion to see logs here.</p>
+                </div>
+
+                <div class="data-table-footer" th:if="${recentLogs != null and !recentLogs.isEmpty()}">
+                    <span th:text="'Showing ' + ${#lists.size(recentLogs)} + ' log entries'">Showing 0 entries</span>
+                </div>
+            </div>
+
+            <!-- Section 2: Final KPI Metrics -->
+            <div class="data-table-wrapper" style="margin-bottom: var(--spacing-xl);">
+                <div class="data-table-header">
+                    <h3 class="font-title-lg" style="margin: 0;">Final KPI Metrics</h3>
+                    <span class="text-label-md text-secondary" th:text="${#lists.size(kpiMetrics)} + ' entries'">0 entries</span>
+                </div>
+
+                <table class="data-table" th:if="${kpiMetrics != null and !kpiMetrics.isEmpty()}">
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Sector</th>
+                            <th>ROAS</th>
+                            <th>CAC</th>
+                            <th>CLTV</th>
+                            <th>Conv Rate</th>
+                            <th>Scalability</th>
+                            <th>Attr Accuracy</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="metric : ${kpiMetrics}">
+                            <td th:text="${metric.platformName}">Platform</td>
+                            <td th:text="${metric.sectorName}">Sector</td>
+                            <td th:text="${#numbers.formatDecimal(metric.roas, 0, 'COMMA', 2, 'POINT')}">0.00</td>
+                            <td th:text="'$' + ${#numbers.formatDecimal(metric.cac, 0, 'COMMA', 2, 'POINT')}">$0.00</td>
+                            <td th:text="'$' + ${#numbers.formatDecimal(metric.cltv, 0, 'COMMA', 2, 'POINT')}">$0.00</td>
+                            <td th:text="${#numbers.formatDecimal(metric.conversionRate * 100, 0, 'COMMA', 2, 'POINT')} + '%'">0.00%</td>
+                            <td th:text="${metric.scalability}">0</td>
+                            <td th:text="${metric.attributionAccuracy}">0</td>
+                            <td th:text="${metric.ingestionTimestamp}">2024-01-01 00:00:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div th:if="${kpiMetrics == null or kpiMetrics.isEmpty()}"
+                     style="padding: var(--spacing-2xl); text-align: center; color: var(--text-muted);">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; margin-bottom: var(--spacing-md); display: block;">analytics</span>
+                    <p style="margin: 0; font-weight: 500;">No KPI metrics available</p>
+                    <p style="margin: var(--spacing-xs) 0 0 0; font-size: var(--font-size-sm);">Metrics will appear after successful data processing.</p>
+                </div>
+
+                <div class="data-table-footer" th:if="${kpiMetrics != null and !kpiMetrics.isEmpty()}">
+                    <span th:text="'Showing ' + ${#lists.size(kpiMetrics)} + ' metric entries'">Showing 0 entries</span>
+                </div>
+            </div>
+
+            <!-- Section 3: Opportunity Metrics -->
+            <div class="data-table-wrapper" style="margin-bottom: var(--spacing-xl);">
+                <div class="data-table-header">
+                    <h3 class="font-title-lg" style="margin: 0;">Opportunity Metrics (Top 5)</h3>
+                    <span class="text-label-md text-secondary" th:text="${#lists.size(opportunityMetrics)} + ' entries'" th:if="${opportunityMetrics != null}">0 entries</span>
+                </div>
+
+                <table class="data-table" th:if="${opportunityMetrics != null and !opportunityMetrics.isEmpty()}">
+                    <thead>
+                        <tr>
+                            <th>Sector</th>
+                            <th>Platform</th>
+                            <th>Demand Score</th>
+                            <th>Competition</th>
+                            <th>Saturation</th>
+                            <th>Est. CPC</th>
+                            <th>Search Growth</th>
+                            <th>Opportunity Index</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="om : ${opportunityMetrics}">
+                            <td th:text="${om.sectorName}">Sector</td>
+                            <td th:text="${om.platformName}">Platform</td>
+                            <td th:text="${#numbers.formatDecimal(om.marketDemandScore, 0, 'COMMA', 1, 'POINT')}">0.0</td>
+                            <td th:text="${#numbers.formatDecimal(om.advertisingCompetitionScore, 0, 'COMMA', 1, 'POINT')}">0.0</td>
+                            <td th:text="${#numbers.formatDecimal(om.localMarketSaturation, 0, 'COMMA', 1, 'POINT')}">0.0</td>
+                            <td th:text="'$' + ${#numbers.formatDecimal(om.averageEstimatedCpc, 0, 'COMMA', 2, 'POINT')}">$0.00</td>
+                            <td th:text="${#numbers.formatDecimal(om.searchGrowth, 0, 'COMMA', 1, 'POINT')} + '%'">0.0%</td>
+                            <td style="font-weight: 700;" th:text="${#numbers.formatDecimal(om.opportunityIndex, 0, 'COMMA', 1, 'POINT')}">0.0</td>
+                            <td th:text="${om.computationTimestamp}">2024-01-01 00:00:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div th:if="${opportunityMetrics == null or opportunityMetrics.isEmpty()}"
+                     style="padding: var(--spacing-2xl); text-align: center; color: var(--text-muted);">
+                    <p style="margin: 0; font-weight: 500;">No opportunity metrics available</p>
+                    <p style="margin: var(--spacing-xs) 0 0 0; font-size: var(--font-size-sm);">Run a data ingestion to compute opportunity metrics.</p>
+                </div>
+
+                <div class="data-table-footer" th:if="${opportunityMetrics != null and !opportunityMetrics.isEmpty()}">
+                    <span th:text="'Top 5 opportunities by index score'">Top 5</span>
+                </div>
+            </div>
+
+            <!-- Section 4: Extracted Companies -->
+            <div class="data-table-wrapper" style="margin-bottom: var(--spacing-xl);">
+                <div class="data-table-header">
+                    <h3 class="font-title-lg" style="margin: 0;">Extracted Companies</h3>
+                    <span class="text-label-md text-secondary" th:text="${#lists.size(companies)} + ' entries'">0 entries</span>
+                </div>
+
+                <table class="data-table" th:if="${companies != null and !companies.isEmpty()}">
+                    <thead>
+                        <tr>
+                            <th>Company Name</th>
+                            <th>Sector</th>
+                            <th>Primary Platform</th>
+                            <th>Confidence</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="company : ${companies}">
+                            <td th:text="${company.companyName}">Company</td>
+                            <td th:text="${sectorNames[company.sectorId]}">Sector</td>
+                            <td th:text="${company.primaryPlatform}">Platform</td>
+                            <td>
+                                <span th:if="${company.confidence != null}"
+                                      th:text="${#numbers.formatDecimal(company.confidence.multiply(100), 0, 'COMMA', 1, 'POINT')} + '%'">0%</span>
+                                <span th:if="${company.confidence == null}">—</span>
+                            </td>
+                            <td>
+                                <span class="kpi-badge"
+                                      th:classappend="${company.isActive} ? 'kpi-badge-high' : 'kpi-badge-low'"
+                                      th:text="${company.isActive} ? 'Active' : 'Inactive'">
+                                    Active
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div th:if="${companies == null or companies.isEmpty()}"
+                     style="padding: var(--spacing-2xl); text-align: center; color: var(--text-muted);">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; margin-bottom: var(--spacing-md); display: block;">corporate_fare</span>
+                    <p style="margin: 0; font-weight: 500;">No companies extracted</p>
+                    <p style="margin: var(--spacing-xs) 0 0 0; font-size: var(--font-size-sm);">Company extraction results will appear here.</p>
+                </div>
+
+                <div class="data-table-footer" th:if="${companies != null and !companies.isEmpty()}">
+                    <span th:text="'Showing ' + ${#lists.size(companies)} + ' companies'">Showing 0 companies</span>
+                </div>
+            </div>
+
+            <div style="margin-top: var(--spacing-xl);">
+                <a th:href="@{/dashboard.xhtml}" class="btn btn-outline">
+                    <span class="material-symbols-outlined" style="font-size: var(--font-size-sm);">arrow_back</span>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <button class="fab-button" title="AI Assistant — coming soon" onclick="alert('AI Assistant — coming soon');">
+        <span class="material-symbols-outlined fill">smart_toy</span>
+    </button>
+</body>
+</html>

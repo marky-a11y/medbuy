@@ -1,0 +1,37 @@
+# ------------------------------------------------------------------------------
+# Dev Environment Values
+# ------------------------------------------------------------------------------
+
+global:
+  environment: dev
+
+replicaCount: 1
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 85
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  hosts:
+    - host: dev-dashboard.media-buying.autoresolve.com
+      paths:
+        - /
+
+nodeSelector:
+  node-type: dashboard
+
+serviceMonitor:
+  enabled: true
+  interval: 60s

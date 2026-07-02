@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "media-buying-dashboard.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "media-buying-dashboard.labels" . | nindent 4 }}
+data:
+  application-k8s.yml: |
+    # Spring Boot configuration for Kubernetes environments
+    server:
+      address: {{ .Values.env.SERVER_ADDRESS | default "0.0.0.0" }}
+      port: {{ .Values.env.SERVER_PORT | default "6800" }}
+
+    spring:
+      datasource:
+        url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:media_buying}
+        hikari:
+          maximum-pool-size: 10
+          minimum-idle: 2
+          idle-timeout: 300000
+          connection-timeout: 20000
+
+      redis:
+        host: ${REDIS_HOST}
+        port: ${REDIS_PORT:6379}
+        password: ${SPRING_REDIS_PASSWORD}
+        ssl: true
+        timeout: 5000
+        lettuce:
+          pool:
+            max-active: 16
+            max-idle: 8
+            min-idle: 2
+
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: {{ .Values.env.MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE }}
+      endpoint:
+        health:
+          show-details: {{ .Values.env.MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS }}
+      metrics:
+        export:
+          prometheus:
+            enabled: {{ .Values.env.MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED }}
+
+    logging:
+      level:
+        com.autoresolve: {{ .Values.env.LOGGING_LEVEL_COM_AUTORESOLVE | default "DEBUG" }}
+        root: {{ .Values.env.LOGGING_LEVEL_ROOT | default "INFO" }}
+
+    # Integration API keys (injected from External Secrets / environment variables)
+    integration:
+      google-ads:
+        api-key: ${INTEGRATION_GOOGLE_ADS_API_KEY}
+      meta-ads:
+        api-key: ${INTEGRATION_META_ADS_API_KEY}
+      tiktok-ads:
+        api-key: ${INTEGRATION_TIKTOK_ADS_API_KEY}
+      linkedin-ads:
+        api-key: ${INTEGRATION_LINKEDIN_ADS_API_KEY}
+      iheart-radio:
+        api-key: ${INTEGRATION_IHEART_RADIO_API_KEY}
+
+    # Dashboard configuration (from ConfigMap)
+    dashboard:
+      refresh-interval: {{ .Values.configMap.dashboardRefreshInterval | quote }}
+      kpi-staleness-threshold: {{ .Values.configMap.kpiStalenessThreshold | quote }}
+      scoring-weights: {{ .Values.configMap.scoringWeightsDefault | quote }}

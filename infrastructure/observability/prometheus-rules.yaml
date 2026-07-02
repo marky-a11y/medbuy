@@ -1,0 +1,415 @@
+# =============================================================================
+# PrometheusRule CRD - Alerting Rules for Media Buying Dashboard
+# Applied via: kubectl apply -f prometheus-rules.yaml
+# Used in: Week 11 - Observability & Ops Milestone
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: media-buying-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus-stack
+    app: media-buying-dashboard
+    app.kubernetes.io/part-of: media-buying
+    app.kubernetes.io/component: monitoring
+spec:
+  groups:
+    # =========================================================================
+    # Group 1: API Performance (Latency & Error Rate)
+    # =========================================================================
+    - name: api-performance.rules
+      interval: 30s
+      rules:
+        # --- API Error Rate ---
+        - alert: HighApiErrorRate
+          expr: |
+            sum(rate(http_server_requests_seconds_count{status=~"5..", uri!~"/actuator.*"}[5m])) by (uri, namespace, pod)
+            /
+            sum(rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[5m])) by (uri, namespace, pod)
+            > 0.01
+          for: 5m
+          labels:
+            severity: critical
+            component: api
+            metric: error_rate
+          annotations:
+            summary: "High API error rate on {{ $labels.uri }} ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: "5XX error rate is {{ $value | humanizePercentage }} for endpoint {{ $labels.uri }} on pod {{ $labels.pod }}. Threshold: 1%."
+            runbook_url: "https://wiki.autoresolve.com/runbooks/high-api-error-rate"
+
+        # --- API p99 Latency ---
+        - alert: HighApiLatencyP99
+          expr: |
+            histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[5m])) by (le, uri, namespace)) > 2.0
+          for: 5m
+          labels:
+            severity: warning
+            component: api
+            metric: latency_p99
+          annotations:
+            summary: "p99 API latency > 2s for {{ $labels.uri }} ({{ $labels.namespace }})"
+            description: "p99 latency for {{ $labels.uri }} is {{ $value }}s, exceeding the 2-second SLA threshold."
+            runbook_url: "https://wiki.autoresolve.com/runbooks/high-api-latency"
+
+        # --- API p95 Latency ---
+        - alert: HighApiLatencyP95
+          expr: |
+            histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[5m])) by (le, uri, namespace)) > 1.0
+          for: 10m
+          labels:
+            severity: warning
+            component: api
+            metric: latency_p95
+          annotations:
+            summary: "p95 API latency > 1s for {{ $labels.uri }}"
+            description: "p95 latency for {{ $labels.uri }} is {{ $value }}s, exceeding 1 second threshold."
+
+        # --- Slow Dashboard Page Load ---
+        - alert: SlowDashboardPageLoad
+          expr: |
+            histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{uri="/dashboard"}[5m])) by (le)) > 2.0
+          for: 5m
+          labels:
+            severity: critical
+            component: api
+            metric: page_load
+          annotations:
+            summary: "Dashboard page load > 2 seconds (p95)"
+            description: "Dashboard page load p95 is {{ $value }}s, exceeding the 2-second SLA. Check Redis cache hit ratio and DB query performance."
+            runbook_url: "https://wiki.autoresolve.com/runbooks/slow-dashboard"
+
+        # --- Slow 5XX count ---
+        - alert: HighSlow5xxCount
+          expr: |
+            sum(increase(http_server_requests_seconds_count{status=~"5..", uri!~"/actuator.*"}[5m])) by (uri) > 10
+          for: 5m
+          labels:
+            severity: warning
+            component: api
+            metric: slow_5xx_count
+          annotations:
+            summary: "More than 10 slow 5XX responses on {{ $labels.uri }}"
+            description: "Endpoint {{ $labels.uri }} returned {{ $value }} 5XX responses in the last 5 minutes. Investigate upstream service issues."
+
+        # --- API Request Rate (Too Low - possible outage) ---
+        - alert: LowApiRequestRate
+          expr: |
+            sum(rate(http_server_requests_seconds_count[10m])) < 0.01
+          for: 10m
+          labels:
+            severity: warning
+            component: api
+            metric: request_rate
+          annotations:
+            summary: "Near-zero API request rate detected"
+            description: "API request rate is {{ $value }} req/s over the last 10 minutes. Possible service outage or networking issue."
+
+    # =========================================================================
+    # Group 2: JVM Health
+    # =========================================================================
+    - name: jvm-health.rules
+      interval: 30s
+      rules:
+        # --- JVM Heap Memory Usage ---
+        - alert: HighJvmHeapUsage
+          expr: |
+            (sum(jvm_memory_used_bytes{area="heap", namespace="media-buying"}) by (pod)
+            /
+            sum(jvm_memory_max_bytes{area="heap", namespace="media-buying"}) by (pod)) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            component: jvm
+            metric: heap_usage
+          annotations:
+            summary: "JVM heap usage > 85% on {{ $labels.pod }}"
+            description: "JVM heap is {{ $value | humanizePercentage }} used on pod {{ $labels.pod }}. Consider scaling up memory limits or investigating memory leak."
+
+        - alert: CriticalJvmHeapUsage
+          expr: |
+            (sum(jvm_memory_used_bytes{area="heap", namespace="media-buying"}) by (pod)
+            /
+            sum(jvm_memory_max_bytes{area="heap", namespace="media-buying"}) by (pod)) > 0.95
+          for: 2m
+          labels:
+            severity: critical
+            component: jvm
+            metric: heap_usage
+          annotations:
+            summary: "CRITICAL: JVM heap usage > 95% on {{ $labels.pod }}"
+            description: "JVM heap is critically high at {{ $value | humanizePercentage }}. GC pressure imminent. Restart or scale pod immediately."
+            runbook_url: "https://wiki.autoresolve.com/runbooks/jvm-heap-critical"
+
+        # --- GC Overhead ---
+        - alert: HighGcOverhead
+          expr: |
+            rate(jvm_gc_pause_seconds_sum[5m]) / rate(jvm_gc_pause_seconds_count[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            component: jvm
+            metric: gc_pause
+          annotations:
+            summary: "High GC pause time on {{ $labels.pod }}"
+            description: "Average GC pause time is {{ $value }}s. Consider tuning G1GC or increasing heap."
+
+        # --- GC Pause > 1 second ---
+        - alert: HighGcPauseLatency
+          expr: |
+            max(jvm_gc_pause_seconds_max{namespace="media-buying"}) by (pod) > 1.0
+          for: 2m
+          labels:
+            severity: warning
+            component: jvm
+            metric: gc_pause_latency
+          annotations:
+            summary: "GC pause > 1s on {{ $labels.pod }}"
+            description: "Maximum GC pause time is {{ $value }}s on pod {{ $labels.pod }}. This may cause request timeouts and latency spikes."
+
+        # --- Thread Deadlock ---
+        - alert: JvmThreadDeadlock
+          expr: jvm_threads_deadlocked_threads > 0
+          for: 1m
+          labels:
+            severity: critical
+            component: jvm
+            metric: deadlocked_threads
+          annotations:
+            summary: "JVM thread deadlock detected on {{ $labels.pod }}"
+            description: "{{ $value }} deadlocked threads detected. May cause the application to hang."
+
+    # =========================================================================
+    # Group 3: Cache (Redis) Performance
+    # =========================================================================
+    - name: cache-performance.rules
+      interval: 30s
+      rules:
+        # --- Low Cache Hit Ratio ---
+        - alert: LowCacheHitRatio
+          expr: |
+            (
+              sum(rate(media_buying_cache_hit_total{namespace="media-buying"}[5m]))
+              /
+              (sum(rate(media_buying_cache_hit_total{namespace="media-buying"}[5m])) + sum(rate(media_buying_cache_miss_total{namespace="media-buying"}[5m])))
+            ) < 0.80
+          for: 10m
+          labels:
+            severity: warning
+            component: cache
+            metric: hit_ratio
+          annotations:
+            summary: "Cache hit ratio below 70%"
+            description: "Redis cache hit ratio is {{ $value | humanizePercentage }}. Check for cache invalidation storms or eviction pressure."
+            runbook_url: "https://wiki.autoresolve.com/runbooks/low-cache-hit-ratio"
+
+        # --- Critically Low Cache Hit Ratio ---
+        - alert: CriticallyLowCacheHitRatio
+          expr: |
+            (
+              sum(rate(media_buying_cache_hit_total{namespace="media-buying"}[5m]))
+              /
+              (sum(rate(media_buying_cache_hit_total{namespace="media-buying"}[5m])) + sum(rate(media_buying_cache_miss_total{namespace="media-buying"}[5m])))
+            ) < 0.50
+          for: 5m
+          labels:
+            severity: critical
+            component: cache
+            metric: hit_ratio
+          annotations:
+            summary: "CRITICAL: Cache hit ratio below 50%"
+            description: "Redis cache hit ratio is {{ $value | humanizePercentage }}. DB is under severe load. Investigate immediately."
+            runbook_url: "https://wiki.autoresolve.com/runbooks/critical-cache-hit-ratio"
+
+        # --- High Cache Eviction Rate ---
+        - alert: HighCacheEvictionRate
+          expr: |
+            rate(redis_evicted_keys_total{namespace="media-buying"}[1m]) > 1.67
+          for: 5m
+          labels:
+            severity: warning
+            component: cache
+            metric: eviction_rate
+          annotations:
+            summary: "Cache evictions > 100/min on {{ $labels.pod }}"
+            description: "Redis eviction rate is {{ $value | humanize }} keys/s (> 100/min). Cache may be undersized for the workload."
+
+        # --- Redis Connection Pool Exhaustion ---
+        - alert: RedisConnectionPoolExhaustion
+          expr: |
+            lettuce_redis_connection_pool_active_connections / lettuce_redis_connection_pool_max_connections > 0.90
+          for: 5m
+          labels:
+            severity: warning
+            component: cache
+            metric: connection_pool
+          annotations:
+            summary: "Redis connection pool near exhaustion ({{ $value | humanizePercentage }})"
+            description: "Active Redis connections at {{ $value | humanizePercentage }} of max pool size on {{ $labels.pod }}."
+
+    # =========================================================================
+    # Group 4: Database (PostgreSQL)
+    # =========================================================================
+    - name: database-health.rules
+      interval: 30s
+      rules:
+        # --- DB Connection Pool Exhaustion ---
+        - alert: HighDbConnectionPoolUsage
+          expr: |
+            hikaricp_connections_active / hikaricp_connections_max > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            component: database
+            metric: connection_pool
+          annotations:
+            summary: "DB connection pool > 85% utilized ({{ $labels.pod }})"
+            description: "HikariCP active connections at {{ $value | humanizePercentage }} of max on {{ $labels.pod }}."
+
+        # --- Slow DB Queries ---
+        - alert: SlowDatabaseQueries
+          expr: |
+            histogram_quantile(0.95, sum(rate(hikaricp_connections_usage_seconds_bucket[5m])) by (le, pool)) > 0.5
+          for: 10m
+          labels:
+            severity: warning
+            component: database
+            metric: query_latency
+          annotations:
+            summary: "Slow DB queries detected (p95 > 500ms)"
+            description: "p95 connection usage time is {{ $value }}s for pool {{ $labels.pool }}."
+
+    # =========================================================================
+    # Group 6: Integration (Ad Platform Wrappers)
+    # =========================================================================
+    - name: integration-health.rules
+      interval: 1m
+      rules:
+        # --- Integration Failure Rate (> 5 per minute = WARNING) ---
+        - alert: PlatformIntegrationFailing
+          expr: |
+            rate(media_buying_integration_failure_total{namespace="media-buying"}[5m]) * 60 > 5
+          for: 5m
+          labels:
+            severity: warning
+            component: integration
+            metric: failure_rate
+          annotations:
+            summary: "Ad platform integration failures > 5/min for {{ $labels.platform }}"
+            description: "Integration with {{ $labels.platform }} is failing at {{ $value | humanize }} failures/min. Data may not be refreshing. Check platform API status."
+
+        # --- OAuth Token Refresh Failure ---
+        - alert: OAuthTokenRefreshFailure
+          expr: |
+            rate(media_buying_oauth_token_refresh_errors_total{namespace="media-buying"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+            component: integration
+            metric: oauth_failure
+          annotations:
+            summary: "OAuth token refresh failures for {{ $labels.platform }}"
+            description: "Token refresh for {{ $labels.platform }} has failed in the last 15 minutes. Scheduled ingestion will fail."
+
+    # =========================================================================
+    # Group 7: Pod & Deployment Health
+    # =========================================================================
+    - name: pod-health.rules
+      interval: 30s
+      rules:
+        # --- Pod CrashLooping ---
+        - alert: PodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="media-buying"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+            component: pod
+            metric: restart_rate
+          annotations:
+            summary: "Pod {{ $labels.pod }} is restarting frequently"
+            description: "{{ $labels.container }} in pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes."
+
+        # --- Pod Not Ready ---
+        - alert: PodNotReady
+          expr: |
+            sum by (pod, namespace) (kube_pod_status_ready{condition="false", namespace="media-buying"}) > 0
+          for: 5m
+          labels:
+            severity: critical
+            component: pod
+            metric: readiness
+          annotations:
+            summary: "Pod {{ $labels.pod }} is not ready"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been not ready for > 5 minutes."
+
+        # --- Deployment Pods Unavailable ---
+        - alert: DeploymentReplicasUnavailable
+          expr: |
+            kube_deployment_status_replicas_unavailable{namespace="media-buying"} > 0
+          for: 2m
+          labels:
+            severity: critical
+            component: pod
+            metric: unavailable_replicas
+          annotations:
+            summary: "Deployment {{ $labels.deployment }} has unavailable replicas"
+            description: "Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has {{ $value }} unavailable replicas. Check pod health and recent rollouts."
+
+        # --- HPA Near Max ---
+        - alert: HpaNearMaxCapacity
+          expr: |
+            kube_horizontalpodautoscaler_status_desired_replicas / kube_horizontalpodautoscaler_spec_max_replicas > 0.85
+          for: 10m
+          labels:
+            severity: warning
+            component: pod
+            metric: hpa_scaling
+          annotations:
+            summary: "HPA near max capacity for {{ $labels.horizontalpodautoscaler }}"
+            description: "HPA '{{ $labels.horizontalpodautoscaler }}' is at {{ $value | humanizePercentage }} of max replicas. Consider increasing maxReplicas."
+
+    # =========================================================================
+    # Group 8: Composite Score Freshness
+    # =========================================================================
+    - name: data-freshness.rules
+      interval: 1m
+      rules:
+        # --- Top Opportunity Stale ---
+        - alert: TopOpportunityStale
+          expr: |
+            time() - media_buying_ingestion_timestamp_seconds{namespace="media-buying"} > 900
+          for: 5m
+          labels:
+            severity: warning
+            component: data
+            metric: freshness
+          annotations:
+            summary: "Top Opportunity has not been recomputed in > 15 minutes"
+            description: "The composite score and Top Opportunity card are stale. Check scheduler health and KPI ingestion pipeline."
+
+        # --- Top Opportunity Score Low ---
+        - alert: TopOpportunityScoreLow
+          expr: |
+            media_buying_scoring_top_score{namespace="media-buying"} < 50
+          for: 5m
+          labels:
+            severity: info
+            component: data
+            metric: top_score
+          annotations:
+            summary: "Top Opportunity score is below 50 ({{ $value }})"
+            description: "The Top Opportunity composite score has dropped below 50. Review scoring weights and KPI targets. Current score: {{ $value }}."
+
+        # --- KPI Data Stale ---
+        - alert: KpiDataStale
+          expr: |
+            time() - media_buying_ingestion_timestamp_seconds{namespace="media-buying"} > 1200
+          for: 5m
+          labels:
+            severity: warning
+            component: data
+            metric: freshness
+          annotations:
+            summary: "Latest KPI data ingestion is > 20 minutes old"
+            description: "KPI data freshness SLA (15 min) is breached. Check AdPlatformIngestionScheduler and kpi.raw consumer."

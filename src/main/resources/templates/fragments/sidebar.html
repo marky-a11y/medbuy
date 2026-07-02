@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="sidebar(activePage)" class="sidebar" th:attr="data-active-page=${activePage}">
+    <!-- Brand -->
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">
+            <span class="material-symbols-outlined fill">insights</span>
+        </div>
+        <div>
+            <h1 class="sidebar-brand-title">MedBuy</h1>
+            <p class="sidebar-brand-subtitle">Excellent Media Buying</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+        <a th:href="@{/dashboard.xhtml}"
+           class="sidebar-nav-item"
+           th:classappend="${activePage == 'dashboard'} ? 'sidebar-active' : ''">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span>Dashboard</span>
+        </a>
+        <a th:href="@{/calculator}"
+           class="sidebar-nav-item"
+           th:classappend="${activePage == 'calculator'} ? 'sidebar-active' : ''">
+            <span class="material-symbols-outlined">calculate</span>
+            <span>ROI Calculator</span>
+        </a>
+        <a class="sidebar-nav-item" href="#">
+            <span class="material-symbols-outlined">confirmation_number</span>
+            <span>Ticket Management</span>
+        </a>
+        <a th:href="@{/pipeline-debug}"
+           class="sidebar-nav-item"
+           th:classappend="${activePage == 'pipeline-debug'} ? 'sidebar-active' : ''">
+            <span class="material-symbols-outlined">monitoring</span>
+            <span>Pipeline Debug</span>
+        </a>
+        <a class="sidebar-nav-item" href="#">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+            <span>Admin Panel</span>
+        </a>
+        <a class="sidebar-nav-item" href="#">
+            <span class="material-symbols-outlined">settings</span>
+            <span>Settings</span>
+        </a>
+    </nav>
+
+    <!-- Quick Stat -->
+    <div class="sidebar-quick-stat">
+        <p class="stat-label">Quick Stat</p>
+        <p class="stat-value" th:text="'$42.8k'">$42.8k</p>
+        <p style="font-size: var(--font-size-xs); opacity: 0.8;">Daily Ad Spend</p>
+    </div>
+</div>
+</body>
+</html>

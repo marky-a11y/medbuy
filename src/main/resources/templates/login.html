@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Buying Dashboard - Login</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard-theme.css}">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+        }
+        .login-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: var(--spacing-2xl);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-card h1 {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            color: var(--text-primary);
+        }
+        .login-card .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xl);
+            font-size: var(--font-size-sm);
+        }
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .form-group input {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border-color-strong);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-base);
+            transition: border-color var(--transition-fast);
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px var(--primary-blue-light);
+        }
+        .btn-login {
+            width: 100%;
+            padding: var(--spacing-md);
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color var(--transition-fast);
+        }
+        .btn-login:hover {
+            background-color: var(--primary-blue-hover);
+        }
+        .error-message {
+            background-color: var(--danger-red-bg);
+            color: var(--danger-red);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            font-size: var(--font-size-sm);
+        }
+        .demo-credentials {
+            margin-top: var(--spacing-xl);
+            padding: var(--spacing-md);
+            background-color: var(--bg-gray-100);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-xs);
+            color: var(--text-secondary);
+        }
+        .demo-credentials strong {
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>Media Buying Dashboard</h1>
+        <p class="subtitle">Sign in to access your dashboard</p>
+
+        <div th:if="${param.error}" class="error-message">
+            Invalid username or password. Please try again.
+        </div>
+        <div th:if="${param.logout}" class="error-message" style="background-color: var(--success-green-bg); color: var(--success-green);">
+            You have been logged out successfully.
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="btn-login">Sign In</button>
+        </form>
+
+        <div class="demo-credentials">
+            <strong>Demo Credential:</strong><br>
+            Analyst: analyst / analyst123<br>
+            <span style="color: var(--text-muted); font-size: var(--font-size-xs);">(Admin and Viewer roles are not implemented yet.)</span>
+        </div>
+    </div>
+</body>
+</html>

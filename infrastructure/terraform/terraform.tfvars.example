@@ -1,0 +1,44 @@
+# ------------------------------------------------------------------------------
+# Example terraform.tfvars (copy to environments/{dev,staging,prod}/terraform.tfvars)
+# ------------------------------------------------------------------------------
+
+aws_region  = "us-east-1"
+environment = "dev"  # dev, staging, or prod
+
+# --- VPC ---
+vpc_cidr            = "10.0.0.0/16"
+availability_zones  = ["us-east-1a", "us-east-1b", "us-east-1c"]
+enable_nat_gateways = true
+enable_vpc_endpoints = true
+
+# --- EKS ---
+cluster_version                     = "1.31"
+dashboard_node_group_instance_type  = "t3.medium"
+dashboard_node_group_min_size       = 1
+dashboard_node_group_max_size       = 3
+dashboard_node_group_desired_size   = 1
+consumer_node_group_instance_type   = "t3.small"
+consumer_node_group_min_size        = 1
+consumer_node_group_max_size        = 2
+consumer_node_group_desired_size    = 1
+
+# --- RDS ---
+rds_instance_class      = "db.t3.medium"
+rds_multi_az            = false
+rds_allocated_storage   = 100
+rds_backup_retention    = 7
+rds_deletion_protection = false
+
+# --- ElastiCache Redis ---
+redis_node_type          = "cache.t3.micro"
+redis_num_shards         = 1
+redis_replicas_per_shard = 0
+redis_multi_az           = false
+redis_snapshot_retention = 1
+
+# --- MSK Kafka ---
+msk_broker_instance_type = "kafka.t3.small"
+msk_broker_volume_size   = 100
+msk_broker_count_per_az  = 1
+msk_kafka_version        = "3.6.0"
+msk_enhanced_monitoring  = "DEFAULT"

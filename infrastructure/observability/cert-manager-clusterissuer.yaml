@@ -1,0 +1,108 @@
+# =============================================================================
+# cert-manager + Let's Encrypt Configuration
+# Deployed via: helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+# Then apply this ClusterIssuer.
+# Used in: Week 11 - Observability & Ops Milestone (TLS Security Hardening)
+# =============================================================================
+
+# ---- cert-manager Helm install command (run first) ----
+# helm repo add jetstack https://charts.jetstack.io
+# helm repo update
+# helm upgrade --install cert-manager jetstack/cert-manager \
+#   --namespace cert-manager \
+#   --create-namespace \
+#   --version v1.15.0 \
+#   --set installCRDs=true \
+#   --set 'extraArgs={--dns01-recursive-nameservers-only,--dns01-recursive-nameservers=8.8.8.8:53\,1.1.1.1:53}' \
+#   --wait --timeout 10m
+
+---
+# ClusterIssuer: Let's Encrypt Production
+# Uses HTTP-01 challenge via ALB Ingress annotations
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: devops@autoresolve.com  # REPLACE with actual email
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            class: alb
+---
+# ClusterIssuer: Let's Encrypt Staging (for testing)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: devops@autoresolve.com  # REPLACE with actual email
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            class: alb
+---
+# Certificate resource for the dashboard domain
+# This will automatically request & renew TLS certificates via Let's Encrypt
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: media-buying-dashboard-tls
+  namespace: media-buying
+spec:
+  secretName: media-buying-dashboard-tls
+  duration: 2160h  # 90 days (Let's Encrypt default)
+  renewBefore: 720h  # 30 days before expiry
+  subject:
+    organizations:
+      - AutoResolve Inc.
+  commonName: dashboard.media-buying.autoresolve.com
+  dnsNames:
+    - dashboard.media-buying.autoresolve.com
+    - dev-dashboard.media-buying.autoresolve.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+# Certificate for Grafana
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grafana-tls
+  namespace: monitoring
+spec:
+  secretName: grafana-tls
+  duration: 2160h
+  renewBefore: 720h
+  dnsNames:
+    - grafana.media-buying.autoresolve.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+# Certificate for Kibana
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kibana-tls
+  namespace: logging
+spec:
+  secretName: kibana-tls
+  duration: 2160h
+  renewBefore: 720h
+  dnsNames:
+    - kibana.media-buying.autoresolve.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
