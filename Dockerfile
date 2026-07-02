@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Multi-stage Dockerfile for Media Buying Dashboard
-# Stage 1: Build with Maven + Eclipse Temurin 8
-# Stage 2: Runtime with Eclipse Temurin 8 JRE
+# Stage 1: Build with Maven + Eclipse Temurin 11
+# Stage 2: Runtime with Eclipse Temurin 11 JRE
 # ------------------------------------------------------------------------------
 
 # Stage 1: Build
@@ -23,4 +23,7 @@ COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
-CMD ["java","-jar","app.jar"]
+# Use shell to read Railway's PORT env var and pass it as a command-line argument.
+# This is more reliable than YAML placeholder resolution (%7BPORT:6800%7D) because
+# command-line args take the highest precedence in Spring Boot property resolution.
+CMD sh -c "java -jar app.jar --server.port=\${PORT:-6800} --server.address=0.0.0.0"
