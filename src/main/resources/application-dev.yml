@@ -21,7 +21,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -31,12 +31,13 @@ spring:
         # SessionFactory creation.  With H2 in PostgreSQL mode, some metadata
         # queries may block indefinitely; this setting skips them.
         temp.use_jdbc_metadata_defaults: false
-        # Ensure hbm2ddl matches the Spring property
-        hbm2ddl.auto: none
 
   flyway:
-    enabled: true
-    locations: classpath:db/migration
+    enabled: false
+    # Temporarily disabled on Railway — Flyway 8.5.13 hangs connecting to
+    # H2 PostgreSQL mode from a fat JAR on Java 11. Will re-enable after
+    # upgrading Flyway or adjusting the H2 URL.
+    # locations: classpath:db/migration
 
   thymeleaf:
     cache: false
