@@ -1,5 +1,6 @@
 package com.autoresolve.mediabuying;
 
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
@@ -51,15 +52,13 @@ public class MediaBuyingApplication {
 
         log.info("Starting Media Buying Dashboard (PORT env = {})", System.getenv("PORT"));
 
-        // Set the port from the PORT env var as a system property so it takes
-        // precedence over both application.yml AND any SERVER_PORT env var
-        // (Spring Boot's relaxed binding maps SERVER_PORT → server.port,
-        // which would otherwise override YAML). System properties sit above
-        // OS environment variables in Spring's property source order.
+        // Inject the Railway PORT as a command-line argument so it has the
+        // highest Spring Boot precedence, beating even SERVER_PORT env var.
         String port = System.getenv("PORT");
         if (port != null && !port.isEmpty()) {
-            log.info("Setting server.port to {} from PORT env var", port);
-            System.setProperty("server.port", port);
+            args = Arrays.copyOf(args, args.length + 1);
+            args[args.length - 1] = "--server.port=" + port;
+            log.info("Injected --server.port={} from PORT env var into runtime args", port);
         }
 
         // Register the failure listener BEFORE Spring starts, so it fires even
