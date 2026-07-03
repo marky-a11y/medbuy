@@ -31,7 +31,21 @@ public class MediaBuyingApplication {
             log.error("UNCAUGHT EXCEPTION", e));
 
         log.info("Starting Media Buying Dashboard (PORT env = {})", System.getenv("PORT"));
-        SpringApplication.run(MediaBuyingApplication.class, args);
+
+        // Register the failure listener BEFORE Spring starts, so it fires even
+        // if context initialization fails early (a @Bean listener won't be created
+        // before the failure).
+        SpringApplication app = new SpringApplication(MediaBuyingApplication.class);
+        app.addListeners((ApplicationListener<ApplicationFailedEvent>) event -> {
+            log.error("=== ApplicationFailedEvent ===", event.getException());
+            // Also dump to stderr in case logging subsystem is already shut down
+            System.err.println("=== ApplicationFailedEvent ===");
+            if (event.getException() != null) {
+                event.getException().printStackTrace(System.err);
+            }
+        });
+
+        app.run(args);
     }
 
     @Bean
@@ -54,10 +68,4 @@ public class MediaBuyingApplication {
         return event -> log.info("=== ApplicationReadyEvent ===");
     }
 
-    @Bean
-    ApplicationListener<ApplicationFailedEvent> failed() {
-        return event -> {
-            log.error("=== ApplicationFailedEvent ===", event.getException());
-        };
-    }
 }
