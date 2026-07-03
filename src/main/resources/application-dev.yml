@@ -19,7 +19,7 @@ spring:
       enabled: true
       path: /h2-console
 
-  # Flyway is on the classpath but disabled — we use ddl-auto + data.sql instead
+  # Flyway is on the classpath but disabled — we use ddl-auto + import.sql instead
   flyway:
     enabled: false
 
@@ -27,8 +27,8 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
-    # data.sql runs after Hibernate DDL so seed data can reference existing tables
-    defer-datasource-initialization: true
+    # import.sql runs automatically after Hibernate DDL — no need for
+    # defer-datasource-initialization or sql.init.mode.
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
@@ -37,15 +37,21 @@ spring:
         # @Table(schema = "media_buying") annotations during ddl-auto:update.
         hbm2ddl:
           create_namespaces: true
+          # Explicitly tell Hibernate which import file to run after DDL.
+          # Default is /import.sql, but being explicit avoids any classloader
+          # ambiguity in Spring Boot fat JARs.
+          import_files: import.sql
         # Prevent Hibernate from hanging on JDBC metadata retrieval during
         # SessionFactory creation.  With H2 in PostgreSQL mode, some metadata
         # queries may block indefinitely; this setting skips them.
         temp:
           use_jdbc_metadata_defaults: false
 
+  # Hibernate's import.sql handles seed data — no need for Spring's DataSourceInitializer.
+  # Explicitly disable it to avoid SmartInitializingSingleton issues on Railway.
   sql:
     init:
-      mode: always
+      mode: never
 
   thymeleaf:
     cache: false
