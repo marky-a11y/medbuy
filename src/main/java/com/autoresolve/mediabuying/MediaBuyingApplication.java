@@ -1,5 +1,7 @@
 package com.autoresolve.mediabuying;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationRunner;
@@ -21,11 +23,28 @@ public class MediaBuyingApplication {
 
     private static final Logger log = LoggerFactory.getLogger(MediaBuyingApplication.class);
 
+    /**
+     * Tracks the lifecycle phase so the shutdown hook can distinguish between
+     * an early crash (phase != READY) and an external kill while running
+     * (phase == READY). Updated at each milestone in the startup sequence.
+     */
+    private static final AtomicReference<String> lifecyclePhase =
+            new AtomicReference<>("INITIAL");
+
     public static void main(String[] args) {
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() ->
-            log.error("******** JVM SHUTDOWN HOOK EXECUTED ********")
-        ));
+        lifecyclePhase.set("STARTING");
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            String phase = lifecyclePhase.get();
+            if ("FAILED".equals(phase) || "STARTING".equals(phase) || "INITIALIZING".equals(phase)) {
+                log.error("******** JVM SHUTDOWN HOOK EXECUTED (lifecycle: {}, likely startup failure) ********", phase);
+                System.err.println("******** JVM SHUTDOWN (lifecycle: " + phase + ") ********");
+            } else {
+                log.warn("******** JVM SHUTDOWN HOOK EXECUTED (lifecycle: {}, likely external kill / Railway restart) ********", phase);
+                System.err.println("******** JVM SHUTDOWN (lifecycle: " + phase + ") ********");
+            }
+        }));
 
         Thread.setDefaultUncaughtExceptionHandler((t, e) ->
             log.error("UNCAUGHT EXCEPTION", e));
@@ -37,6 +56,7 @@ public class MediaBuyingApplication {
         // before the failure).
         SpringApplication app = new SpringApplication(MediaBuyingApplication.class);
         app.addListeners((ApplicationListener<ApplicationFailedEvent>) event -> {
+            lifecyclePhase.set("FAILED");
             log.error("=== ApplicationFailedEvent ===", event.getException());
             // Also dump to stderr in case logging subsystem is already shut down
             System.err.println("=== ApplicationFailedEvent ===");
@@ -45,12 +65,14 @@ public class MediaBuyingApplication {
             }
         });
 
+        lifecyclePhase.set("INITIALIZING");
         app.run(args);
     }
 
     @Bean
     ApplicationRunner portLogger(Environment env) {
         return args -> {
+            lifecyclePhase.set("READY");
             log.info("Resolved server.port = {}, active profiles = {}, PORT env = {}",
                     env.getProperty("server.port"),
                     java.util.Arrays.toString(env.getActiveProfiles()),
