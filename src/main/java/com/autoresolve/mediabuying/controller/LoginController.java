@@ -7,19 +7,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
- * Serves the login page template for Spring Security form login,
- * and provides redirect mappings for the root and dashboard paths.
+ * Serves the login page template for Spring Security form login.
  */
 @Controller
 public class LoginController {
-
-    /**
-     * Redirect root URL to the main dashboard page.
-     */
-    @GetMapping("/")
-    public String root() {
-        return "redirect:/dashboard.xhtml";
-    }
 
     /**
      * Serve the Thymeleaf login template for Spring Security form login.
