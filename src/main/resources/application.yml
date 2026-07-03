@@ -203,13 +203,11 @@ data-refresh:
 # Logging
 logging:
   level:
-    root: INFO
-    com.autoresolve.mediabuying: DEBUG
+    root: WARN
+    com.autoresolve.mediabuying: INFO
     com.autoresolve.mediabuying.integration: INFO
-    org.springframework.web: INFO
-    org.hibernate.SQL: WARN
-    # Tomcat embedded server lifecycle — logs "initialized", "starting", and "started" phases
-    org.springframework.boot.web.embedded.tomcat: DEBUG
+    org.springframework: WARN
+    org.hibernate: WARN
 
 # Actuator
 management:

@@ -36,19 +36,20 @@
         <immediateFlush>true</immediateFlush>
     </appender>
 
-    <!-- Root logger (FILE only when not in test) -->
-    <root level="INFO">
+    <!-- Root logger: WARN everywhere — Railway has strict log rate limits -->
+    <root level="WARN">
         <appender-ref ref="JSON"/>
         <springProfile name="!test">
             <appender-ref ref="FILE"/>
         </springProfile>
     </root>
 
-    <!-- Application loggers -->
-    <logger name="com.autoresolve.mediabuying" level="DEBUG"/>
-    <logger name="com.autoresolve.mediabuying.integration" level="INFO"/>
-    <logger name="org.springframework.web" level="INFO"/>
-    <logger name="org.hibernate.SQL" level="WARN"/>
+    <!-- Application loggers — keep minimal to avoid Railway rate limits -->
+    <logger name="com.autoresolve.mediabuying" level="INFO"/>
+    <logger name="com.autoresolve.mediabuying.integration" level="WARN"/>
+    <logger name="org.hibernate.SQL" level="ERROR"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.springframework" level="WARN"/>
 
     <!-- Conditionally use console in dev -->
     <springProfile name="dev">
@@ -57,7 +58,6 @@
             <appender-ref ref="FILE"/>
         </root>
         <logger name="com.autoresolve.mediabuying" level="INFO"/>
-        <logger name="org.hibernate.SQL" level="WARN"/>
     </springProfile>
 
     <!-- Default spring profile (no active profile) -->
