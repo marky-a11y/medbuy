@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -102,6 +103,12 @@ public class DataSourceIngestionScheduler {
         this.eventBus = eventBus;
         this.executor = executor;
         this.ingestionLogRepository = ingestionLogRepository;
+        System.out.println("=== PHASE: DataSourceIngestionScheduler constructor completed at " + System.currentTimeMillis() + " ===");
+    }
+
+    @PostConstruct
+    public void init() {
+        System.out.println("=== PHASE: DataSourceIngestionScheduler @PostConstruct at " + System.currentTimeMillis() + " ===");
     }
 
     /**

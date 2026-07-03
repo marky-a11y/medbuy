@@ -78,28 +78,43 @@ public class MediaBuyingApplication {
         });
 
         lifecyclePhase.set("INITIALIZING");
-        app.run(args);
+
+        System.out.println("=== PHASE: about to call app.run() at " + System.currentTimeMillis() + " ===");
+        try {
+            app.run(args);
+            System.out.println("=== PHASE: app.run() returned normally at " + System.currentTimeMillis() + " ===");
+        } catch (RuntimeException e) {
+            System.err.println("=== PHASE: app.run() threw exception: " + e.getClass().getSimpleName() + ": " + e.getMessage() + " ===");
+            throw e;
+        }
     }
 
     @Bean
     ApplicationRunner portLogger(Environment env) {
         return args -> {
             lifecyclePhase.set("READY");
-            log.info("Resolved server.port = {}, active profiles = {}, PORT env = {}",
-                    env.getProperty("server.port"),
-                    java.util.Arrays.toString(env.getActiveProfiles()),
-                    System.getenv("PORT"));
+            String msg = "Resolved server.port = " + env.getProperty("server.port")
+                    + ", active profiles = " + java.util.Arrays.toString(env.getActiveProfiles())
+                    + ", PORT env = " + System.getenv("PORT");
+            System.out.println("=== PHASE: ApplicationRunner: " + msg + " ===");
+            log.info(msg);
         };
     }
 
     @Bean
     ApplicationListener<ApplicationStartedEvent> started() {
-        return event -> log.info("=== ApplicationStartedEvent ===");
+        return event -> {
+            System.out.println("=== PHASE: ApplicationStartedEvent ===");
+            log.info("=== ApplicationStartedEvent ===");
+        };
     }
 
     @Bean
     ApplicationListener<ApplicationReadyEvent> ready() {
-        return event -> log.info("=== ApplicationReadyEvent ===");
+        return event -> {
+            System.out.println("=== PHASE: ApplicationReadyEvent ===");
+            log.info("=== ApplicationReadyEvent ===");
+        };
     }
 
 }
