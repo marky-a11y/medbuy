@@ -45,6 +45,13 @@ spring:
   session:
     store-type: none
 
+  # Prevent scheduled tasks from starving the main thread during startup.
+  # One thread for the first @Scheduled task, a second for any others.
+  task:
+    scheduling:
+      pool:
+        size: 2
+
 # Disable integration ingestion in dev (no external APIs to call)
 integration:
   ingestion:

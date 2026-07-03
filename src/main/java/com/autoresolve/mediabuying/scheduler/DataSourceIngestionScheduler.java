@@ -108,7 +108,9 @@ public class DataSourceIngestionScheduler {
      * Scheduled ingestion of all 10 market-data sources.
      * Default: runs every 15 minutes (900,000 ms).
      */
-    @Scheduled(fixedRateString = "${pipeline.ingestion.interval-ms:900000}")
+    @Scheduled(
+        fixedRateString = "${pipeline.ingestion.interval-ms:900000}",
+        initialDelayString = "${pipeline.ingestion.initial-delay-ms:300000}")
     public void ingestAllSources() {
         UUID cycleId = UUID.randomUUID();
         log.info("Starting scheduled source ingestion (cycle={}) for all {} market-data wrappers",

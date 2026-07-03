@@ -4,7 +4,8 @@ This dashboard is a focused view of information that would be relevent to new en
 The features of the application are:
 Provide a suggestion of the top ad platform + commerce sector combination.
 Within this suggestion of a top ad platform + commerce sector, a list of suggestions for top company clients is given.
-This list of clients isn't a single suggestion as if only a single suggestion is provided and obtaining that company as a client falls through, there wouldn't be any opportunity secured.
+This list of clients isn't a single suggestion - if only a single suggestion is provided and then obtaining that company as a client falls through, there wouldn't be any opportunity secured.  
+It's better to provide multiple suggestions so that they can all be investigated in parallel.
 
 In addition to suggestions focused on a top ad platform + commerce sector combination, there are also suggestions for filling gaps in the portfolios.
 If the portfolios don't have exposure to a commerce sector and that commerce sector is hot, the AI will suggest why adding a client within that sector would be beneficial.
@@ -12,7 +13,7 @@ If the portfolios don't have exposure to a commerce sector and that commerce sec
 In addition to direct suggestions of clients, there is also a ROI estimate calculator.
 The first supporting evidence for vetting a suggestion would be clicking the additional information icon next to the suggestion to see the KPI metrics.
 The next step would be to plug in that suggestion into the ROI calculator to see potential profit in a specific advertisement opportunity.
-The final step would be a future enhancement to start the inquiry/contract process for engaging with the client.
+The final step would be a future enhancement to start the inquiry/contract process for engaging with the client (integration to an existing engagement process).
 
 
 Note: This dashboard features a lot of mock data as some of the APIs to fetch real data are paid-tier only or are complex.
@@ -28,3 +29,4 @@ Future State:
 - Notes feature for portfolios
 - Save suggestions, Save ROI calculation to file/email
 - Provide suggestions for current portfolio for additional/new advertising.
+- additional user roles/permissioning
