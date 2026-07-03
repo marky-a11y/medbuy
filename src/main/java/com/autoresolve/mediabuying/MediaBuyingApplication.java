@@ -103,6 +103,38 @@ public class MediaBuyingApplication {
 
         lifecyclePhase.set("INITIALIZING");
 
+        // ── Watchdog thread: logs every 10 seconds during startup so we can
+        //    see exactly how long the main thread has been stuck.  Dumps the
+        //    main thread stack trace so we can see WHERE it's blocked.
+        //    Daemon thread so it won't prevent JVM shutdown. ──
+        final long startTimeMs = System.currentTimeMillis();
+        final Thread mainThread = Thread.currentThread();
+        final Thread watchdog = new Thread(() -> {
+            while (!"READY".equals(lifecyclePhase.get())
+                    && !"FAILED".equals(lifecyclePhase.get())) {
+                try {
+                    Thread.sleep(10_000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                long elapsed = (System.currentTimeMillis() - startTimeMs) / 1000;
+                String phase = lifecyclePhase.get();
+                Thread.State mainState = mainThread.getState();
+                log.info("=== WATCHDOG: {}s elapsed, lifecycle={}, mainThread={} ===",
+                        elapsed, phase, mainState);
+                // Dump main thread stack trace to show WHERE it's stuck
+                StackTraceElement[] stack = mainThread.getStackTrace();
+                for (StackTraceElement frame : stack) {
+                    log.info("  WATCHDOG:   at {}", frame);
+                }
+                System.err.println("=== WATCHDOG: " + elapsed + "s elapsed, lifecycle="
+                        + phase + ", mainThread=" + mainState + " ===");
+            }
+        }, "startup-watchdog");
+        watchdog.setDaemon(true);
+        watchdog.start();
+
         log.info("=== PHASE: about to call app.run() at {} ===", System.currentTimeMillis());
         try {
             app.run(args);
