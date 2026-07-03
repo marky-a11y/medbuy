@@ -63,13 +63,15 @@ integration:
 
 logging:
   level:
+    # Your application code — keep at DEBUG for development
     com.autoresolve.mediabuying: DEBUG
     com.autoresolve.mediabuying.integration: DEBUG
-    # Full Hibernate / HikariCP trace to diagnose post-dialect hang
-    org.hibernate: TRACE
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql: TRACE
-    com.zaxxer.hikari: TRACE
-    org.springframework.boot.autoconfigure: INFO
-    org.springframework.boot.autoconfigure.jdbc: DEBUG
-    org.springframework.orm.jpa: DEBUG
+    # Keep Hibernate/Hikari at INFO or WARN to avoid log rate limits on Railway.
+    # The TRACE levels were needed earlier to diagnose a Hibernate hang;
+    # that issue is resolved, so revert to normal levels.
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+    org.springframework.boot.autoconfigure: WARN
+    org.springframework.boot.autoconfigure.jdbc: INFO
+    org.springframework.orm.jpa: WARN
+    # org.springframework.web: DEBUG   # Uncomment if you need to debug health-check routing
