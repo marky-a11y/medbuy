@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:mediabuying;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    url: jdbc:h2:mem:mediabuying;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -19,25 +19,33 @@ spring:
       enabled: true
       path: /h2-console
 
+  # Flyway is on the classpath but disabled — we use ddl-auto + data.sql instead
+  flyway:
+    enabled: false
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    # data.sql runs after Hibernate DDL so seed data can reference existing tables
+    defer-datasource-initialization: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
+        # Ensure the media_buying schema is created automatically from
+        # @Table(schema = "media_buying") annotations during ddl-auto:update.
+        hbm2ddl:
+          create_namespaces: true
         # Prevent Hibernate from hanging on JDBC metadata retrieval during
         # SessionFactory creation.  With H2 in PostgreSQL mode, some metadata
         # queries may block indefinitely; this setting skips them.
-        temp.use_jdbc_metadata_defaults: false
+        temp:
+          use_jdbc_metadata_defaults: false
 
-  flyway:
-    enabled: false
-    # Temporarily disabled on Railway — Flyway 8.5.13 hangs connecting to
-    # H2 PostgreSQL mode from a fat JAR on Java 11. Will re-enable after
-    # upgrading Flyway or adjusting the H2 URL.
-    # locations: classpath:db/migration
+  sql:
+    init:
+      mode: always
 
   thymeleaf:
     cache: false

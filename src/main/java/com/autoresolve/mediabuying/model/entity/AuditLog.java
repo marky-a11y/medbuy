@@ -43,7 +43,7 @@ public class AuditLog {
     @Column(name = "entity_id", length = 100)
     private String entityId;
 
-    @Column(name = "details", columnDefinition = "jsonb")
+    @Column(name = "details", columnDefinition = "text")
     private String details;
 
     @Column(name = "correlation_id", length = 36)
