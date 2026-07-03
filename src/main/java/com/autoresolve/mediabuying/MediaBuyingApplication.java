@@ -50,7 +50,9 @@ public class MediaBuyingApplication {
         Thread.setDefaultUncaughtExceptionHandler((t, e) ->
             log.error("UNCAUGHT EXCEPTION", e));
 
-        log.info("Starting Media Buying Dashboard (PORT env = {})", System.getenv("PORT"));
+        System.out.println("=== MediaBuyingApplication.main() reached at " + System.currentTimeMillis() + " ===");
+        log.info("Starting Media Buying Dashboard (PORT env = {}, profiles env = {})",
+                System.getenv("PORT"), System.getenv("PROFILES_ACTIVE"));
 
         // Inject the Railway PORT as a command-line argument so it has the
         // highest Spring Boot precedence, beating even SERVER_PORT env var.
