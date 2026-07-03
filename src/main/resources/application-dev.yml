@@ -27,8 +27,9 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
-    # import.sql runs automatically after Hibernate DDL — no need for
-    # defer-datasource-initialization or sql.init.mode.
+    # Seed data is handled by import.sql via Hibernate's native bootstrap
+    # mechanism — no need for defer-datasource-initialization or sql.init.mode.
+    # import.sql runs automatically after Hibernate DDL for CREATE actions.
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
@@ -37,18 +38,20 @@ spring:
         # @Table(schema = "media_buying") annotations during ddl-auto:update.
         hbm2ddl:
           create_namespaces: true
-          # Explicitly tell Hibernate which import file to run after DDL.
-          # Default is /import.sql, but being explicit avoids any classloader
-          # ambiguity in Spring Boot fat JARs.
-          import_files: import.sql
+          # NOTE: import_files is NOT set here because:
+          # 1) ddl-auto:update uses SchemaMigrator (not SchemaCreator), so
+          #    import files are never executed for the UPDATE action.
+          # 2) Hibernate's default /import.sql classpath scan is sufficient.
+          # 3) Explicitly setting it caused a hang in some Railway builds
+          #    (possibly a classloader deadlock in the fat JAR).
         # Prevent Hibernate from hanging on JDBC metadata retrieval during
         # SessionFactory creation.  With H2 in PostgreSQL mode, some metadata
         # queries may block indefinitely; this setting skips them.
         temp:
           use_jdbc_metadata_defaults: false
 
-  # Hibernate's import.sql handles seed data — no need for Spring's DataSourceInitializer.
-  # Explicitly disable it to avoid SmartInitializingSingleton issues on Railway.
+  # Seed data via import.sql (Hibernate-native).  Spring's DataSourceInitializer
+  # is explicitly disabled to avoid SmartInitializingSingleton issues on Railway.
   sql:
     init:
       mode: never
