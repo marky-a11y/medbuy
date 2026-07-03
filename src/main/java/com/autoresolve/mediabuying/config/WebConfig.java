@@ -7,7 +7,7 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer;
+import org.springframework.boot.web.embedded.tomcat.TomcatContextCustomizer;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -86,14 +86,30 @@ public class WebConfig {
      * pipeline.  The Engine pipeline processes <em>all</em> incoming requests
      * before they are dispatched to any Context, so the health-check Valve
      * works even while the Context is still starting.
+     * <p>
+     * This is a {@link TomcatContextCustomizer} rather than a
+     * {@link org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer}
+     * because the Engine is not yet created when connector customizers run.
+     * Context customizers run <em>after</em> {@code tomcat.getEngine()}
+     * has been called, so the Engine (and its parent Host/Engine chain)
+     * is guaranteed to exist.
      */
     @Bean
-    public TomcatConnectorCustomizer engineHealthCheckValve() {
-        return connector -> {
-            Container engine = connector.getService().getContainer();
-            Pipeline pipeline = engine.getPipeline();
-            pipeline.addValve(new HealthCheckValve());
-            log.info("=== Added HealthCheckValve to Engine pipeline ===");
+    public TomcatContextCustomizer engineHealthCheckValve() {
+        return context -> {
+            // Navigate up: Context → Host → Engine
+            Container host = context.getParent();
+            if (host != null) {
+                Container engine = host.getParent();
+                if (engine != null) {
+                    engine.getPipeline().addValve(new HealthCheckValve());
+                    log.info("=== Added HealthCheckValve to Engine pipeline (via context customizer) ===");
+                } else {
+                    log.warn("Engine parent is null — cannot add HealthCheckValve");
+                }
+            } else {
+                log.warn("Host parent is null — cannot add HealthCheckValve");
+            }
         };
     }
 
