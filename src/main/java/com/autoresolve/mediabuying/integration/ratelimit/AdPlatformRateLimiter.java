@@ -38,6 +38,7 @@ public class AdPlatformRateLimiter implements InitializingBean {
             @Value("${integration.rate-limit.tiktok-ads:10.0}") double tiktokAdsRate,
             @Value("${integration.rate-limit.linkedin-ads:0.028}") double linkedinAdsRate,
             @Value("${integration.rate-limit.iheart-radio:0.28}") double iheartRadioRate) {
+        System.out.println("=== PHASE: AdPlatformRateLimiter constructor at " + System.currentTimeMillis() + " ===");
         this.googleAdsRate = googleAdsRate;
         this.metaAdsRate = metaAdsRate;
         this.tiktokAdsRate = tiktokAdsRate;

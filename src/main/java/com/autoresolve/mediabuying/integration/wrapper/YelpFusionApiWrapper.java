@@ -44,6 +44,7 @@ public class YelpFusionApiWrapper extends BaseApiWrapper<RawSourceData> implemen
         super(restTemplate, rateLimiter, tokenManager, meterRegistry);
         this.apiKey = apiKey;
         this.liveMode = apiKey != null && !apiKey.isEmpty();
+        System.out.println("=== PHASE: YelpFusionApiWrapper constructor at " + System.currentTimeMillis() + " ===");
     }
 
     @Override
