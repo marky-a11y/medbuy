@@ -1,7 +1,13 @@
 package com.autoresolve.mediabuying.config;
 
+import org.apache.catalina.Container;
+import org.apache.catalina.Pipeline;
+import org.apache.catalina.connector.Request;
+import org.apache.catalina.connector.Response;
+import org.apache.catalina.valves.ValveBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +38,64 @@ public class WebConfig {
 
     /** Tracks whether at least one ServletContextInitializer has been invoked. */
     private static final AtomicBoolean initializerInvoked = new AtomicBoolean(false);
+
+    // ------------------------------------------------------------------
+    // Tomcat Engine-level Valve — intercepts health checks BEFORE
+    // the request reaches the web context (which might still be starting).
+    // ------------------------------------------------------------------
+
+    /**
+     * A Tomcat Valve that responds to {@code /actuator/health} and {@code /}
+     * with HTTP 200 <em>before</em> the request reaches the web application
+     * context.  This is necessary because the context may still be initialising
+     * (stuck in filter / servlet loading) when Railway's health probe arrives,
+     * in which case a context-level servlet would not yet be available.
+     * <p>
+     * The Valve is added to the <b>Engine</b> pipeline, which is active as
+     * soon as the Engine starts (i.e. before any Context starts).
+     */
+    private static class HealthCheckValve extends ValveBase {
+
+        HealthCheckValve() {
+            // asyncSupported = true so the Valve does not block
+            // asynchronous requests.
+            super(true);
+        }
+
+        @Override
+        public void invoke(Request request, Response response)
+                throws IOException, ServletException {
+
+            String path = request.getRequestURI();
+
+            if ("/actuator/health".equals(path) || "/".equals(path)) {
+                response.setContentType("text/plain");
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.getWriter().print("OK from HealthCheckValve");
+                return; // request handled — do NOT forward down the pipeline
+            }
+
+            // Not a health-check path — forward to the next Valve in the
+            // Engine pipeline (which will eventually reach the web Context).
+            getNext().invoke(request, response);
+        }
+    }
+
+    /**
+     * Registers the {@link HealthCheckValve} on the Tomcat <b>Engine</b>
+     * pipeline.  The Engine pipeline processes <em>all</em> incoming requests
+     * before they are dispatched to any Context, so the health-check Valve
+     * works even while the Context is still starting.
+     */
+    @Bean
+    public TomcatConnectorCustomizer engineHealthCheckValve() {
+        return connector -> {
+            Container engine = connector.getService().getContainer();
+            Pipeline pipeline = engine.getPipeline();
+            pipeline.addValve(new HealthCheckValve());
+            log.info("=== Added HealthCheckValve to Engine pipeline ===");
+        };
+    }
 
     // ------------------------------------------------------------------
     // ServletContextInitializer — runs *before* ServletContextListeners
