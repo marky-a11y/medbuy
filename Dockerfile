@@ -27,4 +27,7 @@ EXPOSE 8080
 
 # Exec form — no shell wrapper needed. application.yml resolves the PORT env
 # var through Spring Boot's property mechanism (server.port: ${PORT:8080}).
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# -XX:+ExitOnOutOfMemoryError: On OOM the JVM calls System.exit(1) instead of
+# silently dying, which triggers our shutdown hook so we can distinguish OOM
+# from other external kills in the logs.
+ENTRYPOINT ["java", "-XX:+ExitOnOutOfMemoryError", "-jar", "app.jar"]
