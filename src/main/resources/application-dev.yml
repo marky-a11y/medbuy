@@ -27,6 +27,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
+        # Prevent Hibernate from hanging on JDBC metadata retrieval during
+        # SessionFactory creation.  With H2 in PostgreSQL mode, some metadata
+        # queries may block indefinitely; this setting skips them.
+        temp.use_jdbc_metadata_defaults: false
+        # Ensure hbm2ddl matches the Spring property
+        hbm2ddl.auto: none
 
   flyway:
     enabled: true
@@ -52,5 +58,11 @@ logging:
   level:
     com.autoresolve.mediabuying: DEBUG
     com.autoresolve.mediabuying.integration: DEBUG
+    # Full Hibernate / HikariCP trace to diagnose post-dialect hang
+    org.hibernate: TRACE
     org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+    com.zaxxer.hikari: TRACE
     org.springframework.boot.autoconfigure: INFO
+    org.springframework.boot.autoconfigure.jdbc: DEBUG
+    org.springframework.orm.jpa: DEBUG
