@@ -567,7 +567,7 @@ OBSV‑05/07 (ELK stack) → OBSV‑08 (ServiceMonitor) → OBSV‑09 (setup scr
 | Sub‑Step | Description | Effort (hours) | Key Implementation Detail |
 |----------|-------------|----------------|---------------------------|
 | **08a** | **`PipelineVerificationTest`** — Integration test (`@SpringBootTest`) that: (1) starts application with `dev` profile (mock-enabled=true for all wrappers), (2) calls `dataSourceIngestionScheduler.ingestAllSources()` directly, (3) waits up to 30 seconds for `KpiRefreshEvent` to propagate (poll `kpiMetricsRepository.count()`), (4) asserts `kpi_metrics` table has ≥ 1 row, (5) asserts at least one row per active commerce sector, (6) verifies KPI values are within realistic ranges. | 1.5 | Uses `@Autowired` scheduler and repository. `awaitility` library for async assertion. |
-| **08b** | **Manual verification script** — Document in `docs/developer-onboarding.md`: `mvn spring-boot:run` → wait 20s → open `http://localhost:6800/dashboard` → verify Top Opportunity card shows composite score > 0 and badge is "High"/"Medium"/"Low", not "N/A". Verify sector filter dropdown populated with 5+ sectors. | 0.5 | Documentation-only |
+| **08b** | **Manual verification script** — Document in `docs/developer-onboarding.md`: `mvn spring-boot:run` → wait 20s → open `http://localhost:8080/dashboard` → verify Top Opportunity card shows composite score > 0 and badge is "High"/"Medium"/"Low", not "N/A". Verify sector filter dropdown populated with 5+ sectors. | 0.5 | Documentation-only |
 
 **DSRC-08 Total**: ~2.0 person-hours (~0.25 person-days)
 

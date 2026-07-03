@@ -21,9 +21,10 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
+# EXPOSE is documentation-only; Railway routes traffic to the PORT env var,
+# which application.yml consumes via server.port: ${PORT:8080}.
 EXPOSE 8080
 
-# Shell form CMD — Docker wraps with /bin/sh -c and evaluates ${PORT} directly.
-# Railway sets the PORT env var automatically. The --server.port argument overrides
-# any YAML/property-file configuration (highest Spring Boot precedence).
-CMD sh -c 'if [ -n "$PORT" ]; then exec java -jar app.jar --server.port=$PORT --server.address=0.0.0.0; else exec java -jar app.jar --server.address=0.0.0.0; fi'
+# Exec form — no shell wrapper needed. application.yml resolves the PORT env
+# var through Spring Boot's property mechanism (server.port: ${PORT:8080}).
+ENTRYPOINT ["java", "-jar", "app.jar"]

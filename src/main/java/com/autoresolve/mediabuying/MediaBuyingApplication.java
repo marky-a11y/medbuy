@@ -1,5 +1,7 @@
 package com.autoresolve.mediabuying;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,24 +15,20 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class MediaBuyingApplication {
 
+    private static final Logger log = LoggerFactory.getLogger(MediaBuyingApplication.class);
+
     public static void main(String[] args) {
-        System.out.println("RAILWAY EXPECTED PORT = \"" + System.getenv("PORT") + "\"");
+        log.info("Starting Media Buying Dashboard (PORT env = {})", System.getenv("PORT"));
         SpringApplication.run(MediaBuyingApplication.class, args);
     }
 
     @Bean
     ApplicationRunner portLogger(Environment env) {
         return args -> {
-            String resolvedPort = env.getProperty("server.port");
-            String[] activeProfiles = env.getActiveProfiles();
-            String portEnv = System.getenv("PORT");
-            String portProperty = System.getProperty("server.port");
-            System.out.println("=== PORT DEBUG ===");
-            System.out.println("  RAILWAY PORT env var  = \"" + portEnv + "\"");
-            System.out.println("  System property (-D) = \"" + portProperty + "\"");
-            System.out.println("  Active profiles       = " + java.util.Arrays.toString(activeProfiles));
-            System.out.println("  Resolved server.port  = \"" + resolvedPort + "\"");
-            System.out.println("=== END PORT DEBUG ===");
+            log.info("Resolved server.port = {}, active profiles = {}, PORT env = {}",
+                    env.getProperty("server.port"),
+                    java.util.Arrays.toString(env.getActiveProfiles()),
+                    System.getenv("PORT"));
         };
     }
 }

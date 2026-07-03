@@ -61,7 +61,7 @@ All API keys are managed via `src/main/resources/properties.env`. In development
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-The dashboard is now available at `http://localhost:6800/dashboard/`.
+The dashboard is now available at `http://localhost:8080/dashboard/` (the default port; set the `PORT` env var to override).
 
 ### 6. Log In
 Use the demo credentials:
@@ -144,7 +144,7 @@ Finally, `kpi.refresh` events are published (async) to trigger cache invalidatio
 After starting the application with `mvn spring-boot:run`:
 
 1. **Wait ~20 seconds** for the first ingestion cycle to complete
-2. **Open** `http://localhost:6800/dashboard`
+2. **Open** `http://localhost:8080/dashboard`
 3. **The Top Opportunity card** should show a composite score > 0 with a badge of "High", "Medium", or "Low" (not "N/A")
 4. **The sector filter dropdown** should be populated with 5+ sectors
 5. **The KPI table** in any sector should show populated values (not "---")
@@ -588,7 +588,7 @@ INSERT INTO platform (name, display_name, is_active) VALUES ('snapchat_ads', 'Sn
 sudo lsof -i :5432    # PostgreSQL
 sudo lsof -i :6379    # Redis
 sudo lsof -i :9092    # Kafka
-sudo lsof -i :6800    # Application
+sudo lsof -i :8080    # Application
 
 # Kill the process or change the port in docker-compose-dev.yml / application.yml
 ```
@@ -605,7 +605,7 @@ sudo lsof -i :6800    # Application
 
 ### H2 Console Not Accessible
 
-**Symptom**: Cannot access `http://localhost:6800/h2-console` in dev mode.
+**Symptom**: Cannot access `http://localhost:8080/h2-console` in dev mode.
 
 **Solution**:
 1. Verify `application-dev.yml` has `spring.h2.console.enabled=true`.

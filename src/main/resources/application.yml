@@ -1,4 +1,9 @@
 server:
+  # Railway (and other PaaS providers) inject a random port via the PORT env var.
+  # Consume it at the framework level so the app works regardless of launch method
+  # (Dockerfile, Nixpacks, or mvn spring-boot:run). Falls back to 8080 when PORT
+  # is unset (e.g. local development).
+  port: ${PORT:8080}
   address: 0.0.0.0
 
 spring:
