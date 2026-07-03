@@ -22,7 +22,8 @@ spring:
       maximum-pool-size: 20
       minimum-idle: 5
       idle-timeout: 300000
-      connection-timeout: 20000
+      # Short connection timeout so startup fails fast when database is down
+      connection-timeout: 5000
 
   # JPA / Hibernate
   jpa:

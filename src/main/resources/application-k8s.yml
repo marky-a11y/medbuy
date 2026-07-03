@@ -1,0 +1,59 @@
+# ------------------------------------------------------------------------------
+# Kubernetes / Production Profile
+#
+# Activated by SPRING_PROFILES_ACTIVE=k8s (set in Helm values.yaml).
+# Connects to PostgreSQL via environment variables configured through
+# External Secrets and ConfigMap in the Helm chart.
+#
+# The base application.yml provides the datasource defaults; this profile
+# tunes connection pools, timeouts, and disables dev-only features.
+# ------------------------------------------------------------------------------
+
+server:
+  address: 0.0.0.0
+
+spring:
+  # PostgreSQL datasource — credentials come from External Secrets
+  # via SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD
+  datasource:
+    # Override the base connection pool to fail fast when the database is down
+    hikari:
+      connection-timeout: 10000    # 10 seconds (down from 30s default)
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      max-lifetime: 600000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc.lob.non_contextual_creation: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: media_buying
+
+  # Disable H2 console in production
+  h2:
+    console:
+      enabled: false
+
+  # Thymeleaf caching enabled for production
+  thymeleaf:
+    cache: true
+
+# Disable dev-only ingestion
+integration:
+  ingestion:
+    enabled: false
+
+logging:
+  level:
+    com.autoresolve.mediabuying: INFO
+    com.autoresolve.mediabuying.integration: WARN
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN

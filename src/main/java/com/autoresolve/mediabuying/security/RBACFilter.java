@@ -17,7 +17,7 @@ public class RBACFilter implements Filter {
     private static final Logger log = LoggerFactory.getLogger(RBACFilter.class);
 
     public RBACFilter() {
-        System.out.println("=== PHASE: RBACFilter constructor at " + System.currentTimeMillis() + " ===");
+        log.info("=== PHASE: RBACFilter constructor at {} ===", System.currentTimeMillis());
     }
 
     @Override

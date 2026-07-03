@@ -21,8 +21,7 @@ public class AppConfig {
 
     @PostConstruct
     public void init() {
-        log.info("=== PHASE: AppConfig @PostConstruct ===");
-        System.out.println("=== PHASE: AppConfig @PostConstruct ===");
+        log.info("=== PHASE: AppConfig @PostConstruct at {} ===", System.currentTimeMillis());
     }
 
     @Bean

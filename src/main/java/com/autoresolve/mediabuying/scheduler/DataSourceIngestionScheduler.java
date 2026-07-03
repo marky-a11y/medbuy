@@ -103,12 +103,12 @@ public class DataSourceIngestionScheduler {
         this.eventBus = eventBus;
         this.executor = executor;
         this.ingestionLogRepository = ingestionLogRepository;
-        System.out.println("=== PHASE: DataSourceIngestionScheduler constructor completed at " + System.currentTimeMillis() + " ===");
+        log.info("=== PHASE: DataSourceIngestionScheduler constructor completed at {} ===", System.currentTimeMillis());
     }
 
     @PostConstruct
     public void init() {
-        System.out.println("=== PHASE: DataSourceIngestionScheduler @PostConstruct at " + System.currentTimeMillis() + " ===");
+        log.info("=== PHASE: DataSourceIngestionScheduler @PostConstruct at {} ===", System.currentTimeMillis());
     }
 
     /**

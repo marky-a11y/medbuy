@@ -1,0 +1,57 @@
+# ------------------------------------------------------------------------------
+# Railway Deployment Profile
+#
+# Activate this profile on Railway by setting the environment variable:
+#   SPRING_PROFILES_ACTIVE=railway
+#
+# Railway provides PostgreSQL via the DATABASE_URL environment variable
+# in the format: jdbc:postgresql://user:password@host:port/database
+#
+# This profile parses DATABASE_URL into Spring Boot datasource properties,
+# or falls back to individual DB_* env vars if DATABASE_URL is not set.
+# ------------------------------------------------------------------------------
+
+server:
+  address: 0.0.0.0
+
+spring:
+  datasource:
+    # Railway DATABASE_URL format: postgresql://user:password@host:port/database
+    # Spring Boot accepts it directly as a JDBC URL
+    url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:media_buying}}
+    username: ${DB_USER:${DATABASE_USER:mediabuyer}}
+    password: ${DB_PASSWORD:${DATABASE_PASSWORD:changeme}}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 10000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 300000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc.lob.non_contextual_creation: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: media_buying
+
+  # Disable H2 console
+  h2:
+    console:
+      enabled: false
+
+  # Thymeleaf caching on for production
+  thymeleaf:
+    cache: true
+
+logging:
+  level:
+    com.autoresolve.mediabuying: INFO
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN

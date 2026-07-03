@@ -45,7 +45,7 @@ public class OAuthTokenManager implements InitializingBean {
     private final Counter tokenRefreshErrorsCounter;
 
     public OAuthTokenManager(RestTemplate restTemplate, MeterRegistry meterRegistry) {
-        System.out.println("=== PHASE: OAuthTokenManager constructor at " + System.currentTimeMillis() + " ===");
+        log.info("=== PHASE: OAuthTokenManager constructor at {} ===", System.currentTimeMillis());
         this.restTemplate = restTemplate;
 
         // Register custom Micrometer metrics

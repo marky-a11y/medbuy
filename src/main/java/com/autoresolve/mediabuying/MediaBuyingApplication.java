@@ -39,10 +39,10 @@ public class MediaBuyingApplication {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             String phase = lifecyclePhase.get();
             if ("FAILED".equals(phase) || "STARTING".equals(phase) || "INITIALIZING".equals(phase)) {
-                log.error("******** JVM SHUTDOWN HOOK EXECUTED (lifecycle: {}, likely startup failure) ********", phase);
+                log.error("******** JVM SHUTDOWN HOOK (lifecycle: {}, likely startup failure) ********", phase);
                 System.err.println("******** JVM SHUTDOWN (lifecycle: " + phase + ") ********");
             } else {
-                log.warn("******** JVM SHUTDOWN HOOK EXECUTED (lifecycle: {}, likely external kill / Railway restart) ********", phase);
+                log.warn("******** JVM SHUTDOWN HOOK (lifecycle: {}, likely external kill / Railway restart) ********", phase);
                 System.err.println("******** JVM SHUTDOWN (lifecycle: " + phase + ") ********");
             }
         }));
@@ -50,9 +50,9 @@ public class MediaBuyingApplication {
         Thread.setDefaultUncaughtExceptionHandler((t, e) ->
             log.error("UNCAUGHT EXCEPTION", e));
 
-        System.out.println("=== MediaBuyingApplication.main() reached at " + System.currentTimeMillis() + " ===");
-        log.info("Starting Media Buying Dashboard (PORT env = {}, profiles env = {})",
-                System.getenv("PORT"), System.getenv("PROFILES_ACTIVE"));
+        log.info("=== MediaBuyingApplication.main() reached at {} ===", System.currentTimeMillis());
+        log.info("Starting Media Buying Dashboard (PORT env = {}, profiles env = {}, SPRING_PROFILES_ACTIVE env = {})",
+                System.getenv("PORT"), System.getenv("PROFILES_ACTIVE"), System.getenv("SPRING_PROFILES_ACTIVE"));
 
         // Inject the Railway PORT as a command-line argument so it has the
         // highest Spring Boot precedence, beating even SERVER_PORT env var.
@@ -79,12 +79,14 @@ public class MediaBuyingApplication {
 
         lifecyclePhase.set("INITIALIZING");
 
-        System.out.println("=== PHASE: about to call app.run() at " + System.currentTimeMillis() + " ===");
+        log.info("=== PHASE: about to call app.run() at {} ===", System.currentTimeMillis());
         try {
             app.run(args);
-            System.out.println("=== PHASE: app.run() returned normally at " + System.currentTimeMillis() + " ===");
+            log.info("=== PHASE: app.run() returned normally at {} ===", System.currentTimeMillis());
         } catch (RuntimeException e) {
+            log.error("=== PHASE: app.run() threw exception: {}: {} ===", e.getClass().getSimpleName(), e.getMessage(), e);
             System.err.println("=== PHASE: app.run() threw exception: " + e.getClass().getSimpleName() + ": " + e.getMessage() + " ===");
+            e.printStackTrace(System.err);
             throw e;
         }
     }
@@ -96,24 +98,21 @@ public class MediaBuyingApplication {
             String msg = "Resolved server.port = " + env.getProperty("server.port")
                     + ", active profiles = " + java.util.Arrays.toString(env.getActiveProfiles())
                     + ", PORT env = " + System.getenv("PORT");
-            System.out.println("=== PHASE: ApplicationRunner: " + msg + " ===");
-            log.info(msg);
+            log.info("=== PHASE: ApplicationRunner: {} ===", msg);
         };
     }
 
     @Bean
     ApplicationListener<ApplicationStartedEvent> started() {
         return event -> {
-            System.out.println("=== PHASE: ApplicationStartedEvent ===");
-            log.info("=== ApplicationStartedEvent ===");
+            log.info("=== PHASE: ApplicationStartedEvent ===");
         };
     }
 
     @Bean
     ApplicationListener<ApplicationReadyEvent> ready() {
         return event -> {
-            System.out.println("=== PHASE: ApplicationReadyEvent ===");
-            log.info("=== ApplicationReadyEvent ===");
+            log.info("=== PHASE: ApplicationReadyEvent ===");
         };
     }
 

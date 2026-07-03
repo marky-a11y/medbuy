@@ -38,7 +38,7 @@ public class PytrendsApiWrapper extends BaseApiWrapper<RawSourceData> implements
             OAuthTokenManager tokenManager,
             MeterRegistry meterRegistry) {
         super(restTemplate, rateLimiter, tokenManager, meterRegistry);
-        System.out.println("=== PHASE: PytrendsApiWrapper constructor at " + System.currentTimeMillis() + " ===");
+        log.info("=== PHASE: PytrendsApiWrapper constructor at {} ===", System.currentTimeMillis());
     }
 
     @Override

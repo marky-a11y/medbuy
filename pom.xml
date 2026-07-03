@@ -99,6 +99,8 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
+        <!-- Flyway 8.x bundles H2 support in flyway-core; the separate
+             flyway-h2database artifact was introduced in Flyway 9.x. -->
 
         <!-- Jackson -->
         <dependency>
