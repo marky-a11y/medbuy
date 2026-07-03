@@ -1,5 +1,8 @@
 package com.autoresolve.mediabuying;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -42,17 +45,36 @@ public class MediaBuyingApplication {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             String phase = lifecyclePhase.get();
+            // Log memory state at shutdown — helps diagnose OOM kills
+            MemoryMXBean mem = ManagementFactory.getMemoryMXBean();
+            MemoryUsage heap = mem.getHeapMemoryUsage();
+            long usedMB = heap.getUsed() / (1024 * 1024);
+            long maxMB = heap.getMax() / (1024 * 1024);
             if ("FAILED".equals(phase) || "STARTING".equals(phase) || "INITIALIZING".equals(phase)) {
-                log.error("******** JVM SHUTDOWN HOOK (lifecycle: {}, likely startup failure) ********", phase);
-                System.err.println("******** JVM SHUTDOWN (lifecycle: " + phase + ") ********");
+                log.error("******** JVM SHUTDOWN HOOK (lifecycle: {}, heap: {}/{}MB) ********",
+                        phase, usedMB, maxMB);
+                System.err.println("******** JVM SHUTDOWN (lifecycle: " + phase
+                        + ", heap: " + usedMB + "/" + maxMB + "MB) ********");
             } else {
-                log.warn("******** JVM SHUTDOWN HOOK (lifecycle: {}, likely external kill / Railway restart) ********", phase);
-                System.err.println("******** JVM SHUTDOWN (lifecycle: " + phase + ") ********");
+                log.warn("******** JVM SHUTDOWN HOOK (lifecycle: {}, heap: {}/{}MB) ********",
+                        phase, usedMB, maxMB);
+                System.err.println("******** JVM SHUTDOWN (lifecycle: " + phase
+                        + ", heap: " + usedMB + "/" + maxMB + "MB) ********");
             }
         }));
 
-        Thread.setDefaultUncaughtExceptionHandler((t, e) ->
-            log.error("UNCAUGHT EXCEPTION", e));
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            log.error("UNCAUGHT EXCEPTION in thread '{}': {}", t.getName(), e.getMessage(), e);
+            System.err.println("UNCAUGHT EXCEPTION in thread '" + t.getName() + "': " + e);
+            e.printStackTrace(System.err);
+        });
+
+        // Log initial memory state
+        MemoryMXBean memBean = ManagementFactory.getMemoryMXBean();
+        MemoryUsage initialHeap = memBean.getHeapMemoryUsage();
+        log.info("=== INITIAL HEAP: used={}MB, max={}MB ===",
+                initialHeap.getUsed() / (1024 * 1024),
+                initialHeap.getMax() / (1024 * 1024));
 
         log.info("=== MediaBuyingApplication.main() reached at {} ===", System.currentTimeMillis());
         log.info("Starting Media Buying Dashboard (PORT env = {}, profiles env = {}, SPRING_PROFILES_ACTIVE env = {})",
@@ -94,7 +116,6 @@ public class MediaBuyingApplication {
         app.addListeners((ApplicationListener<ApplicationFailedEvent>) event -> {
             lifecyclePhase.set("FAILED");
             log.error("=== ApplicationFailedEvent ===", event.getException());
-            // Also dump to stderr in case logging subsystem is already shut down
             System.err.println("=== ApplicationFailedEvent ===");
             if (event.getException() != null) {
                 event.getException().printStackTrace(System.err);
@@ -103,9 +124,8 @@ public class MediaBuyingApplication {
 
         lifecyclePhase.set("INITIALIZING");
 
-        // ── Watchdog thread: logs every 10 seconds during startup so we can
-        //    see exactly how long the main thread has been stuck.  Dumps the
-        //    main thread stack trace so we can see WHERE it's blocked.
+        // ── Watchdog thread: logs every 5 seconds during startup with heap
+        //    memory stats.  This catches OOM pressure and thread state.
         //    Daemon thread so it won't prevent JVM shutdown. ──
         final long startTimeMs = System.currentTimeMillis();
         final Thread mainThread = Thread.currentThread();
@@ -113,23 +133,35 @@ public class MediaBuyingApplication {
             while (!"READY".equals(lifecyclePhase.get())
                     && !"FAILED".equals(lifecyclePhase.get())) {
                 try {
-                    Thread.sleep(10_000);
+                    Thread.sleep(5_000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     return;
                 }
-                long elapsed = (System.currentTimeMillis() - startTimeMs) / 1000;
-                String phase = lifecyclePhase.get();
-                Thread.State mainState = mainThread.getState();
-                log.info("=== WATCHDOG: {}s elapsed, lifecycle={}, mainThread={} ===",
-                        elapsed, phase, mainState);
-                // Dump main thread stack trace to show WHERE it's stuck
-                StackTraceElement[] stack = mainThread.getStackTrace();
-                for (StackTraceElement frame : stack) {
-                    log.info("  WATCHDOG:   at {}", frame);
+                try {
+                    long elapsed = (System.currentTimeMillis() - startTimeMs) / 1000;
+                    String phase = lifecyclePhase.get();
+                    Thread.State mainState = mainThread.getState();
+                    MemoryUsage heap = memBean.getHeapMemoryUsage();
+                    long usedMB = heap.getUsed() / (1024 * 1024);
+                    long maxMB = heap.getMax() / (1024 * 1024);
+                    log.info("=== WATCHDOG: {}s, lifecycle={}, mainThread={}, heap={}/{}MB ===",
+                            elapsed, phase, mainState, usedMB, maxMB);
+                    // Only dump stack if main thread is not RUNNABLE (i.e., blocked/waiting)
+                    if (mainState != Thread.State.RUNNABLE) {
+                        StackTraceElement[] stack = mainThread.getStackTrace();
+                        for (StackTraceElement frame : stack) {
+                            log.info("  WATCHDOG:   at {}", frame);
+                        }
+                    }
+                    System.err.println("=== WATCHDOG: " + elapsed + "s, lifecycle="
+                            + phase + ", mainThread=" + mainState
+                            + ", heap=" + usedMB + "/" + maxMB + "MB ===");
+                } catch (Throwable t) {
+                    // Watchdog itself crashed — log and continue
+                    System.err.println("WATCHDOG ERROR: " + t);
+                    t.printStackTrace(System.err);
                 }
-                System.err.println("=== WATCHDOG: " + elapsed + "s elapsed, lifecycle="
-                        + phase + ", mainThread=" + mainState + " ===");
             }
         }, "startup-watchdog");
         watchdog.setDaemon(true);
@@ -139,9 +171,15 @@ public class MediaBuyingApplication {
         try {
             app.run(args);
             log.info("=== PHASE: app.run() returned normally at {} ===", System.currentTimeMillis());
-        } catch (RuntimeException e) {
-            log.error("=== PHASE: app.run() threw exception: {}: {} ===", e.getClass().getSimpleName(), e.getMessage(), e);
-            System.err.println("=== PHASE: app.run() threw exception: " + e.getClass().getSimpleName() + ": " + e.getMessage() + " ===");
+        } catch (Throwable e) {
+            // Catch Throwable (not just RuntimeException) to capture OOM, StackOverflow, etc.
+            MemoryUsage crashHeap = memBean.getHeapMemoryUsage();
+            long crashUsedMB = crashHeap.getUsed() / (1024 * 1024);
+            long crashMaxMB = crashHeap.getMax() / (1024 * 1024);
+            log.error("=== PHASE: app.run() threw {}: {} (heap: {}/{}MB) ===",
+                    e.getClass().getSimpleName(), e.getMessage(), crashUsedMB, crashMaxMB, e);
+            System.err.println("=== PHASE: app.run() threw " + e.getClass().getSimpleName()
+                    + ": " + e.getMessage() + " (heap: " + crashUsedMB + "/" + crashMaxMB + "MB) ===");
             e.printStackTrace(System.err);
             throw e;
         }
