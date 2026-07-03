@@ -942,7 +942,7 @@ The following Micrometer counters and gauges are instrumented in the application
 │  ┌─────────────────────────────────────────────────────────────────┐ │
 │  │                     Dashboard Pods (x N, HPA)                     │ │
 │  │   ┌──────────────────────────────────────────────────────────┐  │ │
-│  │   │ Spring Boot JAR (0.0.0.0:6800)                           │  │ │
+│  │   │ Spring Boot JAR (0.0.0.0:8080)                           │  │ │
 │  │   │   • PrimeFaces/Thymeleaf UI                              │  │ │
 │  │   │   • All REST API controllers                             │  │ │
 │  │   │   • 4-stage ETL pipeline (Spring Events, same JVM)       │  │ │
@@ -1067,7 +1067,7 @@ infrastructure/terraform/
 | **VPC Endpoints (Interface)** | ECR DKR, CloudWatch Logs, STS | Private connectivity for EKS control plane communication |
 
 **Security Group Rules** (summary):
-- **EKS Node SG**: Inbound from ALB SG on 6800; outbound to RDS (5432), Redis (6379)
+- **EKS Node SG**: Inbound from ALB SG on 8080; outbound to RDS (5432), Redis (6379)
 - **RDS SG**: Inbound from EKS Node SG on 5432 only
 - **ElastiCache SG**: Inbound from EKS Node SG on 6379 only
 - **ALB SG**: Inbound from 0.0.0.0/0 on 443
@@ -1207,7 +1207,7 @@ FROM openjdk:8-jre-alpine
 RUN addgroup --system mediabuyer && adduser --system --no-create-home --ingroup mediabuyer mediabuyer
 COPY --from=build /app/target/media-buying-dashboard.jar /app.jar
 USER mediabuyer
-EXPOSE 6800
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app.jar", "--server.address=0.0.0.0"]
 ```
 

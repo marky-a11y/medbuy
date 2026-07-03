@@ -10,7 +10,7 @@ data:
     # Spring Boot configuration for Kubernetes environments
     server:
       address: {{ .Values.env.SERVER_ADDRESS | default "0.0.0.0" }}
-      port: {{ .Values.env.SERVER_PORT | default "6800" }}
+      port: {{ .Values.env.SERVER_PORT | default "8080" }}
 
     spring:
       datasource:

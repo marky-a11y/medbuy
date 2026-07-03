@@ -19,8 +19,8 @@ replicaCount: 2
 # Service configuration
 service:
   type: ClusterIP
-  port: 6800
-  targetPort: 6800
+  port: 8080
+  targetPort: 8080
   annotations: {}
 
 # Ingress configuration
@@ -72,7 +72,7 @@ env:
   # Logging
   LOGGING_LEVEL_COM_AUTORESOLVE: DEBUG
   LOGGING_LEVEL_ROOT: INFO
-  SERVER_PORT: "6800"
+  SERVER_PORT: "8080"
   SERVER_ADDRESS: "0.0.0.0"
   SPRING_PROFILES_ACTIVE: k8s
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus

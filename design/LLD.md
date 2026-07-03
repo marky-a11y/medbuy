@@ -4065,7 +4065,7 @@ mediabuying-dashboard/
 
 ```yaml
 server:
-  port: 6800
+  port: ${PORT:8080}
   address: 0.0.0.0  # Bind to all interfaces per java_web_app.md requirement
 
 spring:
@@ -4296,8 +4296,8 @@ image:
 
 service:
   type: ClusterIP
-  port: 6800
-  targetPort: 6800
+  port: 8080
+  targetPort: 8080
 
 ingress:
   enabled: true
@@ -4421,7 +4421,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 6800
+              containerPort: 8080
               protocol: TCP
           envFrom:
             - configMapRef:
@@ -4431,14 +4431,14 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
-              port: 6800
+              port: 8080
             initialDelaySeconds: 60
             periodSeconds: 15
             failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
-              port: 6800
+              port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 2
@@ -4950,10 +4950,10 @@ COPY --from=builder /workspace/target/*.jar /app/app.jar
 RUN mkdir -p /var/log/mediabuying && chown -R mediabuyer:mediabuyer /var/log/mediabuying
 
 USER mediabuyer
-EXPOSE 6800
+EXPOSE 8080
 
 HEALTHCHECK --interval=15s --timeout=3s --retries=3 \
-  CMD wget -q -O- http://localhost:6800/actuator/health | grep UP || exit 1
+  CMD wget -q -O- http://localhost:8080/actuator/health | grep UP || exit 1
 
 ENTRYPOINT ["java", \
   "-XX:+UseContainerSupport", \

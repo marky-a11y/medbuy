@@ -11,7 +11,7 @@ setlocal enabledelayedexpansion
 :: Prerequisites:
 ::   - Java 8 (JDK 1.8) installed and JAVA_HOME set
 ::   - Maven 3.8+ installed and MAVEN_HOME set (or mvn on PATH)
-::   - Port 6800 available
+::   - Port 8080 available
 :: ===========================================================================
 
 set SCRIPT_DIR=%~dp0
@@ -33,11 +33,11 @@ echo ===========================================================================
 echo.
 
 :: --------------------------------------------------
-:: Step 0: Kill any existing process on port 6800
+:: Step 0: Kill any existing process on port 8080
 :: --------------------------------------------------
-echo [0/4] Checking for stale process on port 6800...
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":6800 " ^| findstr "LISTENING"') do (
-    echo [INFO] Found process PID %%a holding port 6800. Killing...
+echo [0/4] Checking for stale process on port 8080...
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8080 " ^| findstr "LISTENING"') do (
+    echo [INFO] Found process PID %%a holding port 8080. Killing...
     taskkill /F /PID %%a >nul 2>&1
     if !ERRORLEVEL! equ 0 (
         echo [OK] Killed process PID %%a.
@@ -45,7 +45,7 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":6800 " ^| findstr "LISTENIN
         echo [WARN] Could not kill process PID %%a. Attempting to continue...
     )
 )
-echo [OK] Port 6800 is free.
+echo [OK] Port 8080 is free.
 echo.
 
 :: --------------------------------------------------
@@ -95,7 +95,7 @@ echo.
 :: --------------------------------------------------
 echo [4/4] Starting Media Buying Dashboard server...
 echo.
-echo Application will start on http://localhost:6800/dashboard.xhtml
+echo Application will start on http://localhost:8080/dashboard.xhtml
 echo Press Ctrl+C to stop the server.
 echo.
 
@@ -113,7 +113,7 @@ java --add-opens java.base/java.lang=ALL-UNNAMED ^
     -jar "%JAR_FILE%" ^
     --spring.profiles.active=dev ^
     --server.address=0.0.0.0 ^
-    --server.port=6800
+    --server.port=8080
 
 :: Capture exit code
 set EXIT_CODE=%ERRORLEVEL%
