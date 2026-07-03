@@ -207,6 +207,8 @@ logging:
     com.autoresolve.mediabuying.integration: INFO
     org.springframework.web: INFO
     org.hibernate.SQL: WARN
+    # Tomcat embedded server lifecycle — logs "initialized", "starting", and "started" phases
+    org.springframework.boot.web.embedded.tomcat: DEBUG
 
 # Actuator
 management:

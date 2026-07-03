@@ -22,6 +22,14 @@ public class MediaBuyingApplication {
     private static final Logger log = LoggerFactory.getLogger(MediaBuyingApplication.class);
 
     public static void main(String[] args) {
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() ->
+            log.error("******** JVM SHUTDOWN HOOK EXECUTED ********")
+        ));
+
+        Thread.setDefaultUncaughtExceptionHandler((t, e) ->
+            log.error("UNCAUGHT EXCEPTION", e));
+
         log.info("Starting Media Buying Dashboard (PORT env = {})", System.getenv("PORT"));
         SpringApplication.run(MediaBuyingApplication.class, args);
     }
