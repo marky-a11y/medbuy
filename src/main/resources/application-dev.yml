@@ -26,32 +26,16 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
-    # Seed data is handled by import.sql via Hibernate's native bootstrap
-    # mechanism — no need for defer-datasource-initialization or sql.init.mode.
-    # import.sql runs automatically after Hibernate DDL for CREATE actions.
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
-        # Ensure the media_buying schema is created automatically from
-        # @Table(schema = "media_buying") annotations during ddl-auto:update.
+        format_sql: false
         hbm2ddl:
           create_namespaces: true
-          # NOTE: import_files is NOT set here because:
-          # 1) ddl-auto:update uses SchemaMigrator (not SchemaCreator), so
-          #    import files are never executed for the UPDATE action.
-          # 2) Hibernate's default /import.sql classpath scan is sufficient.
-          # 3) Explicitly setting it caused a hang in some Railway builds
-          #    (possibly a classloader deadlock in the fat JAR).
-        # Prevent Hibernate from hanging on JDBC metadata retrieval during
-        # SessionFactory creation.  With H2 in PostgreSQL mode, some metadata
-        # queries may block indefinitely; this setting skips them.
         temp:
           use_jdbc_metadata_defaults: false
 
-  # Seed data via import.sql (Hibernate-native).  Spring's DataSourceInitializer
-  # is explicitly disabled to avoid SmartInitializingSingleton issues on Railway.
   sql:
     init:
       mode: never
@@ -81,15 +65,10 @@ integration:
 
 logging:
   level:
-    # Your application code — keep at DEBUG for development
-    com.autoresolve.mediabuying: DEBUG
-    com.autoresolve.mediabuying.integration: DEBUG
-    # Keep Hibernate/Hikari at INFO or WARN to avoid log rate limits on Railway.
-    # The TRACE levels were needed earlier to diagnose a Hibernate hang;
-    # that issue is resolved, so revert to normal levels.
+    com.autoresolve.mediabuying: INFO
+    com.autoresolve.mediabuying.integration: INFO
     org.hibernate: WARN
     com.zaxxer.hikari: WARN
     org.springframework.boot.autoconfigure: WARN
-    org.springframework.boot.autoconfigure.jdbc: INFO
+    org.springframework.boot.autoconfigure.jdbc: WARN
     org.springframework.orm.jpa: WARN
-    # org.springframework.web: DEBUG   # Uncomment if you need to debug health-check routing

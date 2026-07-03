@@ -52,12 +52,12 @@
 
     <!-- Conditionally use console in dev -->
     <springProfile name="dev">
-        <root level="INFO">
+        <root level="WARN">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
         </root>
-        <logger name="com.autoresolve.mediabuying" level="DEBUG"/>
-        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="com.autoresolve.mediabuying" level="INFO"/>
+        <logger name="org.hibernate.SQL" level="WARN"/>
     </springProfile>
 
     <!-- Default spring profile (no active profile) -->
