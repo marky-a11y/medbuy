@@ -4,6 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
+    "startCommand": "java -Xmx384m -jar /app/app.jar",
     "restartPolicyType": "NEVER",
     "healthcheckPath": "/actuator/health",
     "healthcheckTimeout": 300
