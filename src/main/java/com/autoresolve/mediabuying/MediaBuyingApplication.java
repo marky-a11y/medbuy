@@ -51,6 +51,17 @@ public class MediaBuyingApplication {
 
         log.info("Starting Media Buying Dashboard (PORT env = {})", System.getenv("PORT"));
 
+        // Set the port from the PORT env var as a system property so it takes
+        // precedence over both application.yml AND any SERVER_PORT env var
+        // (Spring Boot's relaxed binding maps SERVER_PORT → server.port,
+        // which would otherwise override YAML). System properties sit above
+        // OS environment variables in Spring's property source order.
+        String port = System.getenv("PORT");
+        if (port != null && !port.isEmpty()) {
+            log.info("Setting server.port to {} from PORT env var", port);
+            System.setProperty("server.port", port);
+        }
+
         // Register the failure listener BEFORE Spring starts, so it fires even
         // if context initialization fails early (a @Bean listener won't be created
         // before the failure).
