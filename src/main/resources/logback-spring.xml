@@ -33,6 +33,7 @@
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{correlationId}] - %msg%n</pattern>
         </encoder>
+        <immediateFlush>true</immediateFlush>
     </appender>
 
     <!-- Root logger (FILE only when not in test) -->
