@@ -3,6 +3,7 @@ package com.autoresolve.mediabuying.scheduler;
 import com.autoresolve.mediabuying.service.SourceAttributionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
  * Runs daily at 2:00 AM by default.
  */
 @Component
+@ConditionalOnProperty(name = "pipeline.ingestion.enabled", havingValue = "true", matchIfMissing = false)
 public class SourceVerificationScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(SourceVerificationScheduler.class);

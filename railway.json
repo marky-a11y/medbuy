@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "java -Xmx480m -Xss256k -XX:+UseSerialGC -XX:MaxMetaspaceSize=80m -XX:+UseCompressedOops -jar /app/app.jar",
+    "startCommand": "java -Xmx448m -Xss256k -XX:+UseSerialGC -XX:MaxMetaspaceSize=144m -XX:+UseCompressedOops -jar /app/app.jar",
     "restartPolicyType": "NEVER",
     "healthcheckPath": "/actuator/health",
     "healthcheckTimeout": 300
