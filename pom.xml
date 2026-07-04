@@ -89,18 +89,12 @@
             <version>${primefaces.version}</version>
         </dependency>
 
-        <!-- Database -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
+        <!-- Database — H2 in-memory (dev/railway); PostgreSQL added via dev/local-prod profiles -->
+        <!-- PostgreSQL driver is included ONLY in dev/local-postgres/prod profiles, NOT in railway -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
-        <!-- Flyway 8.x bundles H2 support in flyway-core; the separate
-             flyway-h2database artifact was introduced in Flyway 9.x. -->
 
         <!-- Jackson -->
         <dependency>
@@ -303,4 +297,52 @@
             </plugin>
         </plugins>
     </build>
+
+    <!--
+      Maven build profiles.
+      Use: mvn package -P railway   (for Railway deployment)
+           mvn package -P local-postgres  (for local PostgreSQL dev)
+           mvn package (default: dev profile, H2 only)
+    -->
+    <profiles>
+        <!-- Dev profile (active by default): H2 in-memory, no PostgreSQL -->
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+
+        <!-- Railway deployment: no PostgreSQL, slimmer memory footprint -->
+        <profile>
+            <id>railway</id>
+            <dependencies>
+                <!-- PostgreSQL intentionally excluded for Railway H2-only deployment -->
+            </dependencies>
+        </profile>
+
+        <!-- Local development with a real PostgreSQL instance -->
+        <profile>
+            <id>local-postgres</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Production profile: full PostgreSQL + Flyway support -->
+        <profile>
+            <id>prod</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

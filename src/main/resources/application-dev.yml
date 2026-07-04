@@ -16,8 +16,8 @@ spring:
     hikari:
       connection-timeout: 5000
       idle-timeout: 60000
-      maximum-pool-size: 2
-      minimum-idle: 1
+      maximum-pool-size: 1
+      minimum-idle: 0
 
   h2:
     console:
@@ -66,6 +66,12 @@ spring:
     scheduling:
       pool:
         size: 1
+
+  # JSF / PrimeFaces (Joinfaces) — Production stage disables debug checks
+  # and view-state encryption validation that consume heap on every request.
+  joinfaces:
+    faces:
+      project-stage: Production
 
 integration:
   ingestion:

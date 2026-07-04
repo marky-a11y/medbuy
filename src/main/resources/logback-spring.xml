@@ -12,21 +12,7 @@
         </encoder>
     </appender>
 
-    <!-- File appender for local debugging (disabled in test profile).
-         Uses a relative path so it works on any OS without requiring
-         root privileges to create /var/log directories. -->
-    <springProfile name="!test">
-        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-            <file>./logs/application.log</file>
-            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-                <fileNamePattern>./logs/application.%d{yyyy-MM-dd}.log</fileNamePattern>
-                <maxHistory>30</maxHistory>
-            </rollingPolicy>
-            <encoder>
-                <pattern>%d{ISO8601} [%thread] %-5level %logger{36} [correlationId=%X{correlationId}] - %msg%n</pattern>
-            </encoder>
-        </appender>
-    </springProfile>
+    
 
     <!-- Development console appender (human-readable) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -39,9 +25,6 @@
     <!-- Root logger: WARN everywhere — Railway has strict log rate limits -->
     <root level="WARN">
         <appender-ref ref="JSON"/>
-        <springProfile name="!test">
-            <appender-ref ref="FILE"/>
-        </springProfile>
     </root>
 
     <!-- Application loggers — keep minimal to avoid Railway rate limits -->
@@ -55,7 +38,6 @@
     <springProfile name="dev">
         <root level="WARN">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="FILE"/>
         </root>
         <logger name="com.autoresolve.mediabuying" level="INFO"/>
     </springProfile>
@@ -64,7 +46,6 @@
     <springProfile name="default">
         <root level="INFO">
             <appender-ref ref="JSON"/>
-            <appender-ref ref="FILE"/>
         </root>
     </springProfile>
 
