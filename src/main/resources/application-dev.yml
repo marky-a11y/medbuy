@@ -8,9 +8,8 @@ spring:
     lazy-initialization: true
 
   datasource:
-    # H2 memory tuning: CACHE_SIZE=4096 (4MB page cache, default is 16MB),
-    # LOCK_MODE=0 (no locking for single-user), LOG=0 (no transaction log)
-    url: jdbc:h2:mem:mediabuying;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;CACHE_SIZE=4096;LOCK_MODE=0;LOG=0
+    # H2 memory tuning: CACHE_SIZE=4096 (4MB page cache), LOCK_MODE=0 (no locking)
+    url: jdbc:h2:mem:mediabuying;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;CACHE_SIZE=4096;LOCK_MODE=0
     driver-class-name: org.h2.Driver
     username: sa
     password:
